@@ -52,10 +52,12 @@ function CategoryPill({
       href={href}
       aria-current={active ? "page" : undefined}
       className={[
-        "focus-visible:ring-ring inline-block rounded-full border px-3.5 py-1.5 text-sm whitespace-nowrap transition-colors outline-none focus-visible:ring-2",
+        "inline-block rounded-full border px-3.5 py-1.5 text-sm whitespace-nowrap outline-none",
+        "transition-[color,background-color,border-color,transform] duration-200 ease-[var(--bk-ease)]",
+        "focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         active
-          ? "bg-foreground text-background border-transparent"
-          : "hover:bg-muted text-muted-foreground hover:text-foreground",
+          ? "border-transparent bg-foreground font-medium text-background"
+          : "border-border text-muted-foreground hover:-translate-y-px hover:border-[rgba(62,123,250,0.55)] hover:bg-[#14181E] hover:text-foreground motion-reduce:hover:translate-y-0",
       ].join(" ")}
     >
       {children}

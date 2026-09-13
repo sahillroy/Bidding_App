@@ -59,9 +59,9 @@ export function Countdown({
       // unusable with a screen reader.
       aria-label={`Ends ${formatAbsolute(endsAt)} IST`}
       className={[
-        "tabular-nums",
-        urgent ? "font-medium text-amber-500" : "",
-        c.ended ? "text-muted-foreground" : "",
+        "tnum",
+        urgent ? "font-medium text-[var(--bk-urgent-soft)]" : "",
+        c.ended ? "text-[var(--bk-subtle)]" : "",
         className,
       ]
         .filter(Boolean)

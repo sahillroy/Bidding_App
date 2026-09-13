@@ -12,9 +12,9 @@ export default function SignupPage() {
   );
 
   return (
-    <div className="mx-auto w-full max-w-sm px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Create an account</h1>
-      <p className="text-muted-foreground mt-1.5 text-sm">
+    <div className="mx-auto w-full max-w-sm px-6 py-20">
+      <h1 className="font-[family-name:var(--font-display)] text-[32px] leading-tight tracking-[-0.015em]">Create an account</h1>
+      <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
         You will be given an anonymous handle such as{" "}
         <code className="bg-muted rounded px-1 py-0.5 text-xs">
           bidder_7f2a1c
@@ -33,7 +33,7 @@ export default function SignupPage() {
             type="email"
             autoComplete="email"
             required
-            className="border-input bg-background focus-visible:ring-ring w-full rounded-lg border px-3 py-2 text-sm outline-none focus-visible:ring-2"
+            className="w-full rounded-lg border border-border bg-[#0E1116] px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus-visible:border-[rgba(62,123,250,0.6)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)]/40"
           />
           {state.fieldErrors?.email && (
             <p className="text-destructive text-xs">
@@ -53,7 +53,7 @@ export default function SignupPage() {
             autoComplete="new-password"
             required
             minLength={8}
-            className="border-input bg-background focus-visible:ring-ring w-full rounded-lg border px-3 py-2 text-sm outline-none focus-visible:ring-2"
+            className="w-full rounded-lg border border-border bg-[#0E1116] px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus-visible:border-[rgba(62,123,250,0.6)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)]/40"
           />
           <p className="text-muted-foreground text-xs">
             At least 8 characters. A memorable phrase beats a short scramble.
@@ -75,7 +75,7 @@ export default function SignupPage() {
             type="password"
             autoComplete="new-password"
             required
-            className="border-input bg-background focus-visible:ring-ring w-full rounded-lg border px-3 py-2 text-sm outline-none focus-visible:ring-2"
+            className="w-full rounded-lg border border-border bg-[#0E1116] px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus-visible:border-[rgba(62,123,250,0.6)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)]/40"
           />
           {state.fieldErrors?.confirmPassword && (
             <p className="text-destructive text-xs">

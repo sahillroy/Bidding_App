@@ -1,0 +1,154 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #0A0C0F; color: #ECEEF1; font-family: Archivo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6098FF; } a:hover { color: #8AB3FF; }
+    .label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #656C77; font-weight: 600; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+    .tick { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #6098FF; }
+    .anno { font-size: 11.5px; color: #99A0AA; line-height: 1.55; }
+    .bar { height: 26px; border-radius: 5px; display: flex; align-items: center; padding-left: 10px; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; color: #04070D; font-weight: 600; white-space: nowrap; }
+  </style>
+</helmet>
+
+<div style="padding: 42px 46px 50px;">
+
+  <div style="display: flex; align-items: baseline; gap: 14px;">
+    <h1 style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-size: 32px; font-weight: 400; letter-spacing: -.015em;">Card anatomy &amp; the hover</h1>
+    <span style="font-size: 12.5px; color: #656C77;">What moves, how far, and how long it takes</span>
+  </div>
+  <div style="height: 1px; background: #191D24; margin: 20px 0 32px;"></div>
+
+  <div style="display: grid; grid-template-columns: 300px 1fr; gap: 48px; align-items: start;">
+
+    <!-- The card, measured -->
+    <div>
+      <div class="label" style="margin-bottom: 14px;">Rest</div>
+      <div style="width: 262px; background: #101318; border: 1px solid #22272F; border-radius: 10px; overflow: hidden;">
+        <div style="position: relative; aspect-ratio: 4/3; background: linear-gradient(58deg, #1e3a5f, #2d5a87);">
+          <div style="position: absolute; inset: 0; display: grid; place-items: center; font-size: 62px; font-weight: 700; color: rgba(255,255,255,.16); letter-spacing: .06em;">CE</div>
+          <span style="position: absolute; top: 10px; left: 10px; padding: 5px 9px; border-radius: 999px; background: rgba(10,12,15,.78); border: 1px solid #2A303A; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #99A0AA;">Live</span>
+        </div>
+        <div style="padding: 14px 15px 15px;">
+          <div style="font-size: 14px; font-weight: 500; line-height: 1.35; color: #C9CDD4;">Canon EOS 200D DSLR with 18-55mm lens</div>
+          <div style="display: flex; align-items: baseline; justify-content: space-between; margin-top: 11px;">
+            <div>
+              <div class="label" style="font-size: 10px;">Current bid</div>
+              <div class="mono" style="font-size: 21px; margin-top: 3px; letter-spacing: -.02em;">&#8377;24,500</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="mono" style="font-size: 12px; color: #99A0AA;">12 bids</div>
+              <div class="mono" style="font-size: 12px; margin-top: 3px; color: #C9CDD4;">4h 12m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin-top: 20px; font-size: 11.5px;">
+        <span class="tick">4:3</span><span class="anno">image ratio &mdash; holds for gradients now, photographs later</span>
+        <span class="tick">14/15px</span><span class="anno">body padding, top / sides</span>
+        <span class="tick">11px</span><span class="anno">gap between title and the price block</span>
+        <span class="tick">10px</span><span class="anno">card radius &middot; 999px on the status pill</span>
+        <span class="tick">2 lines</span><span class="anno">title clamp &mdash; every card is the same height</span>
+        <span class="tick">21px</span><span class="anno">price, mono, tabular &mdash; the loudest thing on the card</span>
+      </div>
+    </div>
+
+    <!-- Motion spec -->
+    <div>
+      <div class="label" style="margin-bottom: 14px;">Hover &mdash; eight layers, five durations</div>
+
+      <div style="border: 1px solid #22272F; border-radius: 11px; background: #0C0F14; padding: 22px 24px 24px;">
+
+        <!-- timeline scale -->
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-bottom: 8px;">
+          <span></span>
+          <div style="display: flex; justify-content: space-between; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #4A5059; border-bottom: 1px solid #191D24; padding-bottom: 6px;">
+            <span>0</span><span>175ms</span><span>350ms</span><span>525ms</span><span>700ms</span>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 12px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">border-color</span>
+          <div><div class="bar" style="width: 26%; background: #2B5FD9;">180ms</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">glow</span>
+          <div><div class="bar" style="width: 31%; background: #3670E6;">220ms</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">brackets draw</span>
+          <div style="display: flex;"><div style="width: 8.5%;"></div><div class="bar" style="width: 46%; background: #3E7BFA;">320ms &middot; 60ms in</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">lift + tilt</span>
+          <div><div class="bar" style="width: 43%; background: #4A82F5;">300ms &middot; tracks cursor</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">spotlight</span>
+          <div><div class="bar" style="width: 37%; background: #5B8FF7;">260ms</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">bid row reveal</span>
+          <div style="display: flex;"><div style="width: 8.5%;"></div><div class="bar" style="width: 37%; background: #6D9BF8;">260ms &middot; 60ms in</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">art drift + parallax</span>
+          <div><div class="bar" style="width: 68%; background: #7FA9FA;">480ms</div></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 1fr; gap: 14px; align-items: center; margin-top: 8px;">
+          <span class="mono" style="font-size: 11px; color: #99A0AA;">shine sweep</span>
+          <div><div class="bar" style="width: 100%; background: #97BCFB;">700ms &mdash; one pass, never loops</div></div>
+        </div>
+
+        <p style="margin: 20px 0 0; font-size: 12.5px; color: #99A0AA; line-height: 1.68; max-width: 68ch;">
+          The staggering is the whole trick. Move all eight on one duration and the hover reads as a switch flipping. Let the border snap, the brackets draw, the card tilt under the cursor, the art drift against it, and the light sweep last &mdash; each finishing at a different moment &mdash; and it reads as a physical object responding to a hand.
+        </p>
+        <p style="margin: 12px 0 0; font-size: 12.5px; color: #99A0AA; line-height: 1.68; max-width: 68ch;">
+          The sweep fires <strong style="color:#C9CDD4;">once</strong> per hover and does not repeat. A looping shimmer reads as a skeleton loader &mdash; it tells the eye something is still arriving, which is exactly wrong on content that has already loaded.
+        </p>
+      </div>
+
+      <!-- what changes -->
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 18px;">
+        <div style="border: 1px solid #22272F; border-radius: 9px; padding: 15px 16px; background: #101318;">
+          <div class="label" style="color: #6098FF;">Turns blue</div>
+          <div class="anno" style="margin-top: 8px;">The 1px border, the outer glow, the wash rising off the bottom of the image, and the revealed <span class="mono" style="color:#6098FF;">Place bid &rarr;</span> row.</div>
+        </div>
+        <div style="border: 1px solid #22272F; border-radius: 9px; padding: 15px 16px; background: #101318;">
+          <div class="label">Stays put</div>
+          <div class="anno" style="margin-top: 8px;">Price, bid count and countdown never move or recolour on hover &mdash; they are the facts you are scanning for, and they must not shift under the cursor.</div>
+        </div>
+        <div style="border: 1px solid #22272F; border-radius: 9px; padding: 15px 16px; background: #101318;">
+          <div class="label">What the cursor tracking costs</div>
+          <div class="anno" style="margin-top: 8px;">Tilt, spotlight and parallax need the pointer position, so that part is JS &mdash; the only JS in the whole direction. One listener per card, coalesced into a single <span class="mono">rAF</span>, writing four CSS variables. The rect is measured once on <span class="mono">pointerenter</span>, never in the move handler, so there is no layout thrash. It runs on the hovered card alone; the other 40 are idle.</div>
+        </div>
+        <div style="border: 1px solid #22272F; border-radius: 9px; padding: 15px 16px; background: #101318;">
+          <div class="label" style="color: #E0A33A;">Reduced motion</div>
+          <div class="anno" style="margin-top: 8px;">Every duration collapses to 1ms and both transforms drop. Colour still changes, so the card is still obviously interactive &mdash; the affordance survives, the movement does not.</div>
+        </div>
+      </div>
+
+      <div style="border: 1px solid rgba(62,123,250,.28); border-radius: 9px; padding: 15px 17px; background: rgba(62,123,250,.06); margin-top: 12px;">
+        <div class="label" style="color: #6098FF;">Keyboard</div>
+        <div class="anno" style="margin-top: 8px;">The card is an <span class="mono">&lt;a&gt;</span>, so it is tabbable for free. <span class="mono">:focus-visible</span> paints the same blue as a 2px ring at 3px offset &mdash; a keyboard user sees exactly what a mouse user sees, which is the point.</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1240,"height":860}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

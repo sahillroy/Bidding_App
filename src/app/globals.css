@@ -128,3 +128,151 @@
     @apply font-sans;
   }
 }
+/* ===========================================================================
+   BidKar visual direction
+   ---------------------------------------------------------------------------
+   The scaffold shipped shadcn's default neutral tokens — fully desaturated
+   greys — which is why the first build read as a wireframe. These override the
+   VALUES of the same variables, so every shadcn primitive inherits the
+   direction without being rewritten.
+
+   Cool near-black, not pure black: #000 kills the elevation shadows that the
+   card lift depends on, and a trace of blue in the ground keeps the accent in
+   the same family instead of fighting it.
+   =========================================================================== */
+:root,
+.dark {
+  --background: oklch(0.145 0.008 255);       /* #0A0C0F */
+  --foreground: oklch(0.932 0.004 255);       /* #ECEEF1 */
+
+  --card: oklch(0.181 0.009 255);             /* #101318 */
+  --card-foreground: oklch(0.932 0.004 255);
+
+  --popover: oklch(0.196 0.009 255);
+  --popover-foreground: oklch(0.932 0.004 255);
+
+  --primary: oklch(0.606 0.192 264);          /* #3E7BFA — the signature blue */
+  --primary-foreground: oklch(0.145 0.012 255);
+
+  --secondary: oklch(0.225 0.009 255);
+  --secondary-foreground: oklch(0.932 0.004 255);
+
+  --muted: oklch(0.225 0.009 255);            /* #161A20 */
+  --muted-foreground: oklch(0.672 0.012 255); /* #99A0AA */
+
+  --accent: oklch(0.245 0.012 255);
+  --accent-foreground: oklch(0.932 0.004 255);
+
+  --destructive: oklch(0.653 0.204 27);       /* #FF5C4D */
+  --destructive-foreground: oklch(0.145 0.012 255);
+
+  --border: oklch(0.268 0.010 255);           /* #22272F */
+  --input: oklch(0.268 0.010 255);
+  --ring: oklch(0.606 0.192 264);
+
+  --radius: 0.625rem;
+
+  /* Direction-specific tokens, not part of shadcn's set. */
+  --bk-accent: #3e7bfa;
+  --bk-accent-bright: #6098ff;
+  --bk-accent-deep: #2b5fd9;
+  --bk-subtle: #656c77;
+  --bk-line: #191d24;
+  --bk-urgent: #ff5c4d;
+  --bk-urgent-soft: #ff8577;
+  --bk-demo: #e0a33a;
+  --bk-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@theme inline {
+  --font-display: var(--font-instrument-serif);
+  --font-sans: var(--font-archivo);
+  --font-mono: var(--font-plex-mono);
+}
+
+@layer base {
+  body {
+    /* The dark ground is the design, not a theme the OS may override. */
+    color-scheme: dark;
+  }
+  /* Every price and countdown uses tabular figures so digits do not jitter
+     by a pixel as a bid lands and the number changes. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Scroll-driven entrance.
+
+   Native CSS — no IntersectionObserver, no scroll listener, nothing on the
+   main thread. Wrapped in @supports so that where it is unavailable the
+   content is simply THERE: content must never depend on an animation to be
+   visible.
+   --------------------------------------------------------------------------- */
+@keyframes bk-rise {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  .bk-reveal {
+    animation: bk-rise linear both;
+    animation-timeline: view();
+    animation-range: entry 4% cover 22%;
+  }
+  /* The stagger comes from offsetting each column's RANGE rather than adding a
+     delay, so a row lands as a diagonal instead of a block. */
+  .bk-reveal:nth-child(4n + 2) { animation-range: entry 7% cover 25%; }
+  .bk-reveal:nth-child(4n + 3) { animation-range: entry 10% cover 28%; }
+  .bk-reveal:nth-child(4n + 4) { animation-range: entry 13% cover 31%; }
+}
+
+@supports (animation-timeline: scroll()) {
+  .bk-progress {
+    animation: bk-grow linear both;
+    animation-timeline: scroll(nearest);
+  }
+}
+@keyframes bk-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-reveal,
+  .bk-progress {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* One diagonal pass of light across a card's artwork on hover. Fires once —
+   never loops. A repeating shimmer reads as a skeleton loader, telling the eye
+   that content is still arriving, which is exactly wrong once it has. */
+@keyframes bk-sweep {
+  to {
+    left: 125%;
+  }
+}
+
+/* The dot inside an "Ending soon" badge. Urgency is the one place a loop is
+   right: the thing it signals is genuinely still changing. */
+@keyframes bk-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(0.75);
+  }
+}

@@ -73,7 +73,7 @@ export function SearchBar({
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
         autoComplete="off"
-        className="border-input bg-background focus-visible:ring-ring w-full rounded-lg border py-2 pr-9 pl-9 text-sm outline-none focus-visible:ring-2"
+        className="w-full rounded-lg border border-border bg-[#0E1116] py-2 pr-9 pl-9 text-sm outline-none transition-colors duration-200 placeholder:text-[var(--bk-subtle)] focus-visible:border-[rgba(62,123,250,0.6)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)]/40"
       />
 
       {value && (

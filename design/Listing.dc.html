@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #0A0C0F; color: #ECEEF1; font-family: Archivo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6098FF; text-decoration: none; } a:hover { color: #8AB3FF; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+    .label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #656C77; font-weight: 600; }
+    .cta {
+      display: flex; align-items: center; justify-content: center; gap: 9px;
+      width: 100%; padding: 15px 20px; border-radius: 9px; border: none;
+      background: #3E7BFA; color: #04070D;
+      font-family: Archivo, sans-serif; font-size: 14.5px; font-weight: 700; letter-spacing: -.005em;
+      cursor: pointer;
+      box-shadow: 0 8px 26px -10px rgba(62,123,250,.75);
+      transition: background 180ms cubic-bezier(.2,.8,.2,1), transform 200ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms cubic-bezier(.2,.8,.2,1);
+    }
+    .cta:hover { background: #6098FF; transform: translateY(-2px); box-shadow: 0 14px 34px -10px rgba(96,152,255,.85); }
+    .cta:active { background: #2B5FD9; transform: translateY(0); }
+    .cta:focus-visible { outline: 2px solid #6098FF; outline-offset: 3px; }
+    .bidrow {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 2px; border-bottom: 1px solid #191D24; font-size: 13px;
+      transition: background 160ms ease, padding-left 160ms cubic-bezier(.2,.8,.2,1);
+    }
+    .bidrow:hover { background: #0E1116; padding-left: 9px; }
+    @media (prefers-reduced-motion: reduce) {
+      .cta, .bidrow { transition-duration: 1ms !important; }
+      .cta:hover { transform: none; }
+    }
+  </style>
+</helmet>
+
+<div style="background: #0A0C0F; padding-bottom: 60px;">
+
+  <!-- DEMO banner -->
+  <div style="display: flex; align-items: center; gap: 10px; padding: 9px 40px; background: rgba(224,163,58,.10); border-bottom: 1px solid rgba(224,163,58,.26); color: #E8BE79; font-size: 12.5px;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <span style="font-weight: 700; letter-spacing: .1em; color: #E0A33A; font-size: 11px;">DEMO</span>
+    <span style="opacity: .35;">|</span>
+    <span>This is a demonstration project. No real money moves and no real identity documents are stored. <strong style="color:#F0D3A0; font-weight:600;">Do not enter a real Aadhaar or PAN number.</strong></span>
+  </div>
+
+  <!-- Header -->
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 40px; border-bottom: 1px solid #191D24;">
+    <div style="display: flex; align-items: baseline; gap: 3px;">
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 25px;">Bid</span>
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 25px; color: #3E7BFA;">Kar</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 13px; color: #99A0AA;">Sell</span>
+      <span class="mono" style="font-size: 12px; color: #656C77; padding: 7px 12px; border: 1px solid #22272F; border-radius: 999px;">bidder_7f2a1c</span>
+    </div>
+  </div>
+
+  <div style="padding: 0 40px;">
+    <!-- Breadcrumb -->
+    <div style="display: flex; align-items: center; gap: 9px; padding: 22px 0 26px; font-size: 12.5px; color: #656C77;">
+      <span style="color: #99A0AA;">All auctions</span>
+      <span style="opacity: .5;">/</span>
+      <span style="color: #99A0AA;">Electronics</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 44px; align-items: start;">
+
+      <!-- LEFT: image + description -->
+      <div>
+        <div style="position: relative; aspect-ratio: 4 / 3; border-radius: 12px; overflow: hidden; border: 1px solid #22272F; background: linear-gradient(58deg, #1e3a5f, #2d5a87);">
+          <div style="position: absolute; inset: 0; display: grid; place-items: center; font-size: 130px; font-weight: 700; letter-spacing: .06em; color: rgba(255,255,255,.15);">CE</div>
+          <span style="position: absolute; top: 14px; left: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 11px; border-radius: 999px; background: rgba(10,12,15,.78); border: 1px solid #2A303A; backdrop-filter: blur(8px); font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #99A0AA;">
+            <span style="width: 5px; height: 5px; border-radius: 999px; background: #3FBF8F;"></span>Live
+          </span>
+        </div>
+
+        <!-- Thumbnail strip -->
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 10px; margin-top: 12px;">
+          <div style="aspect-ratio: 1; border-radius: 7px; background: linear-gradient(58deg, #1e3a5f, #2d5a87); border: 2px solid #3E7BFA;"></div>
+          <div style="aspect-ratio: 1; border-radius: 7px; background: linear-gradient(120deg, #1b3350, #274d74); border: 1px solid #22272F;"></div>
+          <div style="aspect-ratio: 1; border-radius: 7px; background: linear-gradient(200deg, #1e3a5f, #22415f); border: 1px solid #22272F;"></div>
+          <div style="aspect-ratio: 1; border-radius: 7px; background: linear-gradient(320deg, #16293f, #2d5a87); border: 1px solid #22272F;"></div>
+          <div style="aspect-ratio: 1; border-radius: 7px; background: linear-gradient(15deg, #1e3a5f, #1a2f4a); border: 1px solid #22272F;"></div>
+        </div>
+
+        <div style="margin-top: 40px;">
+          <div class="label">Description</div>
+          <p style="margin: 13px 0 0; font-size: 14.5px; line-height: 1.72; color: #B4BAC3; max-width: 62ch;">Entry-level DSLR in excellent working order. Shutter count under 8,000. Includes the kit lens, original battery, charger and strap. Minor cosmetic marks on the base plate, nothing affecting use. Sensor is clean.</p>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 1px; margin-top: 30px; background: #191D24; border: 1px solid #191D24; border-radius: 10px; overflow: hidden;">
+            <div style="background: #0C0F14; padding: 16px 18px;">
+              <div class="label">Condition</div>
+              <div style="font-size: 14px; margin-top: 6px;">Good</div>
+            </div>
+            <div style="background: #0C0F14; padding: 16px 18px;">
+              <div class="label">Category</div>
+              <div style="font-size: 14px; margin-top: 6px;">Electronics</div>
+            </div>
+            <div style="background: #0C0F14; padding: 16px 18px;">
+              <div class="label">Seller</div>
+              <!-- Handle only. There is no name, no rating, no contact route. -->
+              <div class="mono" style="font-size: 13px; margin-top: 6px; color: #99A0AA;">bidder_a69896</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: sticky bid panel -->
+      <div style="position: sticky; top: 24px;">
+        <h1 style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-size: 33px; font-weight: 400; line-height: 1.16; letter-spacing: -.01em;">Canon EOS 200D DSLR with 18-55mm lens</h1>
+
+        <div style="margin-top: 22px; border: 1px solid #22272F; border-radius: 12px; background: #101318; overflow: hidden;">
+          <div style="padding: 22px 22px 20px;">
+            <div class="label">Current bid</div>
+            <div style="display: flex; align-items: baseline; gap: 11px; margin-top: 7px;">
+              <span class="mono" style="font-size: 40px; font-weight: 500; letter-spacing: -.03em; line-height: 1;">&#8377;24,500</span>
+              <span class="mono" style="font-size: 13px; color: #3FBF8F;">&#9650; 12 bids</span>
+            </div>
+            <div style="font-size: 12.5px; color: #99A0AA; margin-top: 10px;">
+              Next bid <span class="mono" style="color: #ECEEF1;">&#8377;25,500</span> or more
+              <span style="color: #656C77;">&middot; &#8377;1,000 increment</span>
+            </div>
+          </div>
+
+          <!-- Countdown, urgency-aware. Anchored to the DATABASE clock. -->
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 22px; border-top: 1px solid #191D24; border-bottom: 1px solid #191D24; background: #0C0F14;">
+            <div>
+              <div class="label">Ends in</div>
+              <div class="mono" style="font-size: 23px; font-weight: 500; margin-top: 5px; letter-spacing: -.01em;">04:12:08</div>
+            </div>
+            <div style="text-align: right; font-size: 11.5px; color: #656C77; line-height: 1.55;">
+              15 Sept 2026<br>4:09 pm IST
+            </div>
+          </div>
+
+          <div style="padding: 20px 22px 22px;">
+            <button class="cta">
+              Sign in to bid
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+            <p style="margin: 12px 0 0; font-size: 11.5px; color: #656C77; text-align: center; line-height: 1.6;">Bidding needs an account and a completed identity check. Browsing needs neither.</p>
+          </div>
+        </div>
+
+        <!-- Bid history: handles only -->
+        <div style="margin-top: 26px;">
+          <div style="display: flex; align-items: baseline; justify-content: space-between;">
+            <div class="label">Bid history</div>
+            <span style="font-size: 11.5px; color: #656C77;">Handles only</span>
+          </div>
+          <div style="margin-top: 10px;">
+            <div class="bidrow">
+              <span class="mono" style="color: #99A0AA; font-size: 12.5px;">bidder_4c71e0</span>
+              <span class="mono" style="font-weight: 500;">&#8377;24,500</span>
+            </div>
+            <div class="bidrow">
+              <span class="mono" style="color: #99A0AA; font-size: 12.5px;">bidder_9f2b18</span>
+              <span class="mono" style="color: #99A0AA;">&#8377;23,500</span>
+            </div>
+            <div class="bidrow">
+              <span class="mono" style="color: #99A0AA; font-size: 12.5px;">bidder_4c71e0</span>
+              <span class="mono" style="color: #99A0AA;">&#8377;22,500</span>
+            </div>
+            <div class="bidrow">
+              <span class="mono" style="color: #99A0AA; font-size: 12.5px;">bidder_1d88a4</span>
+              <span class="mono" style="color: #99A0AA;">&#8377;21,500</span>
+            </div>
+            <div class="bidrow" style="border-bottom: none;">
+              <span class="mono" style="color: #99A0AA; font-size: 12.5px;">bidder_9f2b18</span>
+              <span class="mono" style="color: #99A0AA;">&#8377;20,500</span>
+            </div>
+          </div>
+          <p style="margin: 14px 0 0; font-size: 11.5px; color: #656C77; line-height: 1.65;">
+            The bid record is append-only and is never edited. It is the evidence if a result is ever disputed.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1440,"height":1280}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

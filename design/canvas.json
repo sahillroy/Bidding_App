@@ -1,0 +1,34 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html", "x": 0, "y": 0, "w": 1440, "h": 1220, "title": "Catalogue — hover direction" },
+    { "file": "Listing.dc.html", "x": 1560, "y": 0, "w": 1440, "h": 1280, "title": "Listing detail" },
+    { "file": "Scroll.dc.html", "x": 3120, "y": 0, "w": 1080, "h": 900, "title": "Scroll effects — scroll me" },
+    { "file": "CardAnatomy.dc.html", "x": 0, "y": 1460, "w": 1240, "h": 880, "title": "Card anatomy & motion" },
+    { "file": "Tokens.dc.html", "x": 1360, "y": 1460, "w": 1240, "h": 1180, "title": "Foundations" },
+    { "file": "Mobile.dc.html", "x": 2720, "y": 1460, "w": 390, "h": 844, "title": "Mobile 390px" }
+  ],
+  "annotations": [
+    {
+      "id": "hover-note",
+      "x": 0,
+      "y": -170,
+      "w": 470,
+      "text": "Card 1 is pinned to its hover state so you can see the treatment standing still.\n\nHover the others — eight layers move: border, glow, corner brackets, lift, 3D tilt under the cursor, a spotlight that follows it, the art drifting against it, and one pass of light across the image.\n\nThe accent is a tweak above this artboard. Change the blue and the whole direction follows."
+    },
+    {
+      "id": "scroll-note",
+      "x": 3120,
+      "y": -170,
+      "w": 470,
+      "text": "SCROLL THIS ONE. Progress rule, condensing header, hero parallax, a live bid ticker that pauses on hover, cards cascading in on a diagonal, and stat bars that fill.\n\nAll of it is native CSS scroll-driven animation — no scroll listeners, nothing on the main thread. Everything is wrapped in @supports, so where it is unavailable the content is simply there."
+    },
+    {
+      "id": "impl-note",
+      "x": 1560,
+      "y": -170,
+      "w": 470,
+      "text": "The app already uses shadcn's token names, so this lands as new values for --background, --card, --border and --primary rather than a rewrite.\n\nOne caveat worth deciding before I build: the cursor tracking is the only JavaScript here. Everything else — every hover layer and every scroll effect — is CSS."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

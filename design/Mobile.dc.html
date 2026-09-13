@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #0A0C0F; color: #ECEEF1; font-family: Archivo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6098FF; text-decoration: none; } a:hover { color: #8AB3FF; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+    .label { font-size: 10px; letter-spacing: .11em; text-transform: uppercase; color: #656C77; font-weight: 600; }
+    /* Touch has no hover, so the card commits to its active state on press. */
+    .card {
+      display: block; background: #101318; border: 1px solid #22272F; border-radius: 12px;
+      overflow: hidden; text-decoration: none; color: inherit;
+      transition: border-color 160ms cubic-bezier(.2,.8,.2,1), background 160ms cubic-bezier(.2,.8,.2,1), transform 160ms cubic-bezier(.2,.8,.2,1);
+    }
+    .card:active { border-color: #3E7BFA; background: #12161D; transform: scale(.985); }
+    .pill { display: inline-block; padding: 9px 15px; border-radius: 999px; border: 1px solid #22272F; color: #99A0AA; font-size: 13.5px; white-space: nowrap; }
+    .pill.on { background: #ECEEF1; color: #0A0C0F; border-color: #ECEEF1; font-weight: 500; }
+    @media (prefers-reduced-motion: reduce) { .card { transition-duration: 1ms !important; } .card:active { transform: none; } }
+  </style>
+</helmet>
+
+<div style="width: 390px; min-height: 844px; background: #0A0C0F;">
+
+  <!-- DEMO banner, wrapped for narrow. Still never dismissible. -->
+  <div style="display: flex; gap: 9px; padding: 10px 16px; background: rgba(224,163,58,.10); border-bottom: 1px solid rgba(224,163,58,.26); color: #E8BE79; font-size: 11.5px; line-height: 1.45;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none; margin-top: 2px;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <span><strong style="color: #E0A33A; letter-spacing: .09em; font-size: 10.5px; font-weight: 700;">DEMO</strong> &mdash; No real money moves. <strong style="color:#F0D3A0; font-weight:600;">Do not enter a real Aadhaar or PAN number.</strong></span>
+  </div>
+
+  <!-- Header. 44px targets. -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #191D24;">
+    <div style="display: flex; align-items: baseline; gap: 2px;">
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 23px;">Bid</span>
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 23px; color: #3E7BFA;">Kar</span>
+    </div>
+    <div style="display: flex; gap: 8px;">
+      <div style="width: 44px; height: 44px; border-radius: 9px; border: 1px solid #22272F; display: grid; place-items: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#99A0AA" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      </div>
+      <div style="width: 44px; height: 44px; border-radius: 9px; border: 1px solid #22272F; display: grid; place-items: center;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#99A0AA" stroke-width="2" stroke-linecap="round"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category pills, horizontally scrollable -->
+  <div style="display: flex; gap: 8px; padding: 14px 16px 4px; overflow-x: auto;">
+    <span class="pill on">All</span>
+    <span class="pill">Electronics</span>
+    <span class="pill">Collectibles</span>
+    <span class="pill">Home</span>
+  </div>
+
+  <div style="padding: 20px 16px 28px;">
+    <h1 style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-size: 30px; font-weight: 400; letter-spacing: -.012em; line-height: 1.08;">Live auctions</h1>
+    <p style="margin: 6px 0 0; font-size: 12.5px; color: #99A0AA;">41 open &middot; ending soonest</p>
+
+    <!-- Single column below 640px. Image gets taller so it still carries. -->
+    <div style="display: flex; flex-direction: column; gap: 16px; margin-top: 20px;">
+
+      <div class="card">
+        <div style="position: relative; aspect-ratio: 16/10; background: linear-gradient(58deg, #1e3a5f, #2d5a87);">
+          <div style="position: absolute; inset: 0; display: grid; place-items: center; font-size: 72px; font-weight: 700; color: rgba(255,255,255,.16); letter-spacing: .06em;">CE</div>
+          <span style="position: absolute; top: 11px; left: 11px; padding: 6px 10px; border-radius: 999px; background: rgba(10,12,15,.8); border: 1px solid #2A303A; font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #99A0AA;">Live</span>
+        </div>
+        <div style="padding: 15px 16px 16px;">
+          <div style="font-size: 15px; font-weight: 500; line-height: 1.35; color: #E2E5E9;">Canon EOS 200D DSLR with 18-55mm lens</div>
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 13px;">
+            <div>
+              <div class="label">Current bid</div>
+              <div class="mono" style="font-size: 24px; margin-top: 4px; letter-spacing: -.02em;">&#8377;24,500</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="mono" style="font-size: 12.5px; color: #99A0AA;">12 bids</div>
+              <div class="mono" style="font-size: 12.5px; margin-top: 4px; color: #C9CDD4;">4h 12m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="position: relative; aspect-ratio: 16/10; background: linear-gradient(74deg, #3d2f4f, #5a4570);">
+          <div style="position: absolute; inset: 0; display: grid; place-items: center; font-size: 72px; font-weight: 700; color: rgba(255,255,255,.16); letter-spacing: .06em;">SW</div>
+          <span style="position: absolute; top: 11px; left: 11px; padding: 6px 10px; border-radius: 999px; background: rgba(38,14,12,.82); border: 1px solid rgba(255,92,77,.42); font-size: 10.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #FF8577;">Ending soon</span>
+        </div>
+        <div style="padding: 15px 16px 16px;">
+          <div style="font-size: 15px; font-weight: 500; line-height: 1.35; color: #E2E5E9;">Sony WH-1000XM4 wireless headphones</div>
+          <div style="display: flex; align-items: flex-end; justify-content: space-between; margin-top: 13px;">
+            <div>
+              <div class="label">Current bid</div>
+              <div class="mono" style="font-size: 24px; margin-top: 4px; letter-spacing: -.02em;">&#8377;14,500</div>
+            </div>
+            <div style="text-align: right;">
+              <div class="mono" style="font-size: 12.5px; color: #99A0AA;">7 bids</div>
+              <div class="mono" style="font-size: 12.5px; margin-top: 4px; color: #FF8577; font-weight: 500;">19m</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <p style="margin: 22px 0 0; font-size: 11.5px; color: #4A5059; line-height: 1.6;">
+      No hover on touch &mdash; the card commits on press instead: border to blue, a 1.5% scale down, 160ms. Targets are 44px minimum.
+    </p>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

@@ -35,7 +35,7 @@ function LoginForm() {
           type="email"
           autoComplete="email"
           required
-          className="border-input bg-background focus-visible:ring-ring w-full rounded-lg border px-3 py-2 text-sm outline-none focus-visible:ring-2"
+          className="w-full rounded-lg border border-border bg-[#0E1116] px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus-visible:border-[rgba(62,123,250,0.6)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)]/40"
         />
         {state.fieldErrors?.email && (
           <p className="text-destructive text-xs">{state.fieldErrors.email[0]}</p>
@@ -52,7 +52,7 @@ function LoginForm() {
           type="password"
           autoComplete="current-password"
           required
-          className="border-input bg-background focus-visible:ring-ring w-full rounded-lg border px-3 py-2 text-sm outline-none focus-visible:ring-2"
+          className="w-full rounded-lg border border-border bg-[#0E1116] px-3 py-2.5 text-sm outline-none transition-colors duration-200 focus-visible:border-[rgba(62,123,250,0.6)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent)]/40"
         />
         {state.fieldErrors?.password && (
           <p className="text-destructive text-xs">
@@ -79,9 +79,9 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="mx-auto w-full max-w-sm px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
-      <p className="text-muted-foreground mt-1.5 text-sm">
+    <div className="mx-auto w-full max-w-sm px-6 py-20">
+      <h1 className="font-[family-name:var(--font-display)] text-[32px] leading-tight tracking-[-0.015em]">Sign in</h1>
+      <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
         You can browse everything without an account. Signing in is needed to
         bid, sell, comment or like.
       </p>

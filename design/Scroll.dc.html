@@ -1,0 +1,259 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #0A0C0F; color: #ECEEF1; font-family: Archivo, Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6098FF; text-decoration: none; } a:hover { color: #8AB3FF; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+    .label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #656C77; font-weight: 600; }
+    .tag {
+      display: inline-block; padding: 3px 8px; border-radius: 5px; font-size: 10px; font-weight: 600;
+      letter-spacing: .06em; text-transform: uppercase;
+      background: rgba(62,123,250,.12); color: #6098FF; border: 1px solid rgba(62,123,250,.3);
+    }
+
+    /* The artboard itself is the scroller — that is what scroll(nearest) and
+       view() resolve against. */
+    .scroller { height: 900px; overflow-y: auto; overflow-x: hidden; scroll-behavior: smooth; position: relative; }
+
+    /* ── 1 · SCROLL PROGRESS ──────────────────────────────────────────
+       Two lines of CSS, zero JS, zero scroll listeners. Before
+       scroll-driven animations this needed a throttled listener writing
+       a width on every frame. */
+    .prog-track { position: sticky; top: 0; z-index: 40; height: 2px; background: #161A20; }
+    .prog { height: 100%; background: linear-gradient(90deg, #3E7BFA, #6098FF); transform-origin: 0 50%; transform: scaleX(0); }
+    @supports (animation-timeline: scroll()) {
+      .prog { animation: grow linear both; animation-timeline: scroll(nearest); }
+    }
+    @keyframes grow { to { transform: scaleX(1); } }
+
+    /* ── 2 · HEADER CONDENSES ───────────────────────────────────────── */
+    .hdr {
+      position: sticky; top: 2px; z-index: 30;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 36px; background: rgba(10,12,15,0);
+      border-bottom: 1px solid rgba(25,29,36,0);
+    }
+    @supports (animation-timeline: scroll()) {
+      .hdr { animation: condense linear both; animation-timeline: scroll(nearest); animation-range: 0 180px; }
+    }
+    @keyframes condense {
+      to { padding-top: 11px; padding-bottom: 11px; background: rgba(10,12,15,.9); border-bottom-color: #22272F; }
+    }
+    .hdr-mark { display: flex; align-items: baseline; gap: 3px; font-family: 'Instrument Serif', Georgia, serif; }
+    @supports (animation-timeline: scroll()) {
+      .hdr-mark { animation: shrink linear both; animation-timeline: scroll(nearest); animation-range: 0 180px; }
+    }
+    @keyframes shrink { from { font-size: 27px; } to { font-size: 21px; } }
+
+    /* ── 3 · HERO PARALLAX ──────────────────────────────────────────── */
+    .hero { position: relative; height: 360px; overflow: hidden; border-bottom: 1px solid #191D24; }
+    .hero-art {
+      position: absolute; inset: -14% 0; background: linear-gradient(140deg, #14243d 0%, #1e3a5f 42%, #2d5a87 100%);
+      transform: translateY(0) scale(1.1);
+    }
+    @supports (animation-timeline: view()) {
+      .hero-art { animation: para linear both; animation-timeline: view(); animation-range: cover; }
+    }
+    @keyframes para { from { transform: translateY(-9%) scale(1.1); } to { transform: translateY(9%) scale(1.1); } }
+    .hero-fade { position: absolute; inset: 0; background: linear-gradient(to top, #0A0C0F 2%, rgba(10,12,15,.55) 45%, rgba(10,12,15,.25)); }
+    .hero-copy { position: absolute; left: 36px; right: 36px; bottom: 34px; }
+
+    /* Lines rise in sequence as the hero scrolls through */
+    .line { display: block; opacity: 0; transform: translateY(20px); }
+    @supports (animation-timeline: view()) {
+      .line { animation: rise linear both; animation-timeline: view(); }
+      .line:nth-child(1) { animation-range: entry 26% entry 62%; }
+      .line:nth-child(2) { animation-range: entry 32% entry 70%; }
+      .line:nth-child(3) { animation-range: entry 38% entry 78%; }
+    }
+    @keyframes rise { to { opacity: 1; transform: translateY(0); } }
+
+    /* ── 4 · LIVE BID TICKER ────────────────────────────────────────── */
+    .ticker { overflow: hidden; border-bottom: 1px solid #191D24; background: #0C0F14; padding: 11px 0; }
+    .ticker-row { display: flex; gap: 40px; width: max-content; animation: slide 26s linear infinite; }
+    .ticker:hover .ticker-row { animation-play-state: paused; }
+    @keyframes slide { to { transform: translateX(-50%); } }
+    .tick-item { display: flex; align-items: center; gap: 9px; font-size: 12.5px; color: #99A0AA; white-space: nowrap; }
+
+    /* ── 5 · STICKY SECTION HEADING ─────────────────────────────────── */
+    .sticky-head {
+      position: sticky; top: 62px; z-index: 20;
+      display: flex; align-items: baseline; justify-content: space-between;
+      padding: 16px 36px; background: rgba(10,12,15,.92); border-bottom: 1px solid #191D24;
+    }
+
+    /* ── 6 · CARD CASCADE ───────────────────────────────────────────── */
+    .card {
+      position: relative; background: #101318; border: 1px solid #22272F; border-radius: 10px; overflow: hidden;
+      transition: border-color 180ms cubic-bezier(.2,.8,.2,1), transform 280ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms cubic-bezier(.2,.8,.2,1);
+    }
+    .card:hover {
+      border-color: #3E7BFA; transform: translateY(-5px);
+      box-shadow: 0 0 0 1px rgba(62,123,250,.45), 0 20px 44px -18px rgba(62,123,250,.6);
+    }
+    .card .art { aspect-ratio: 4/3; display: grid; place-items: center; font-size: 54px; font-weight: 700; color: rgba(255,255,255,.15); letter-spacing: .06em; transition: transform 420ms cubic-bezier(.2,.8,.2,1); }
+    .card:hover .art { transform: scale(1.06); }
+
+    .cascade { opacity: 0; transform: translateY(30px) scale(.98); }
+    @supports (animation-timeline: view()) {
+      .cascade { animation: pop linear both; animation-timeline: view(); animation-range: entry 6% cover 24%; }
+      /* Staggering the RANGE, not a delay: each column crosses its threshold a
+         little later, so a row lands as a diagonal rather than a block. */
+      .cascade:nth-child(3n+2) { animation-range: entry 10% cover 28%; }
+      .cascade:nth-child(3n+3) { animation-range: entry 14% cover 32%; }
+    }
+    @keyframes pop { to { opacity: 1; transform: translateY(0) scale(1); } }
+
+    /* ── 7 · STAT BARS THAT FILL ────────────────────────────────────── */
+    .bar-track { height: 5px; border-radius: 999px; background: #191D24; overflow: hidden; margin-top: 11px; }
+    .bar { height: 100%; border-radius: 999px; background: linear-gradient(90deg, #2B5FD9, #6098FF); transform-origin: 0 50%; transform: scaleX(0); }
+    @supports (animation-timeline: view()) {
+      .bar { animation: fill cubic-bezier(.2,.8,.2,1) both; animation-timeline: view(); animation-range: entry 18% cover 42%; }
+    }
+    @keyframes fill { to { transform: scaleX(1); } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .prog, .hdr, .hdr-mark, .hero-art, .line, .cascade, .bar { animation: none !important; opacity: 1 !important; transform: none !important; }
+      .ticker-row { animation: none !important; }
+      .card { transition-duration: 1ms !important; }
+      .card:hover { transform: none; }
+      .bar { transform: scaleX(1) !important; }
+    }
+  </style>
+</helmet>
+
+<div class="scroller">
+
+  <!-- DEMO banner scrolls away with the page; it reappears on every route. -->
+  <div style="display: flex; align-items: center; gap: 10px; padding: 9px 36px; background: rgba(224,163,58,.10); border-bottom: 1px solid rgba(224,163,58,.26); color: #E8BE79; font-size: 12px;">
+    <span style="font-weight: 700; letter-spacing: .1em; color: #E0A33A; font-size: 10.5px;">DEMO</span>
+    <span style="opacity: .35;">|</span>
+    <span>No real money moves. <strong style="color:#F0D3A0; font-weight:600;">Do not enter a real Aadhaar or PAN number.</strong></span>
+  </div>
+
+  <div class="prog-track"><div class="prog"></div></div>
+
+  <div class="hdr">
+    <div class="hdr-mark"><span>Bid</span><span style="color: #3E7BFA;">Kar</span></div>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 13px; color: #99A0AA;">Sell</span>
+      <span class="mono" style="font-size: 11.5px; color: #656C77; padding: 6px 11px; border: 1px solid #22272F; border-radius: 999px;">bidder_7f2a1c</span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-art"></div>
+    <div class="hero-fade"></div>
+    <div class="hero-copy">
+      <span class="line tag" style="margin-bottom: 14px;">Ending in under an hour</span>
+      <span class="line" style="font-family: 'Instrument Serif', Georgia, serif; font-size: 46px; line-height: 1.05; letter-spacing: -.02em; max-width: 15ch;">Sony WH-1000XM4 wireless headphones</span>
+      <span class="line" style="margin-top: 16px;">
+        <span class="mono" style="font-size: 26px; letter-spacing: -.02em;">&#8377;14,500</span>
+        <span style="font-size: 13px; color: #99A0AA; margin-left: 12px;">7 bids</span>
+        <span class="mono" style="font-size: 13px; color: #FF8577; margin-left: 12px; font-weight: 500;">19m 04s left</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- TICKER -->
+  <div class="ticker">
+    <div class="ticker-row">
+      <span class="tick-item"><span style="width:5px;height:5px;border-radius:999px;background:#3FBF8F;"></span><span class="mono" style="color:#656C77;">bidder_4c71e0</span> bid <span class="mono" style="color:#ECEEF1;">&#8377;24,500</span> on Canon EOS 200D</span>
+      <span class="tick-item"><span style="width:5px;height:5px;border-radius:999px;background:#3FBF8F;"></span><span class="mono" style="color:#656C77;">bidder_9f2b18</span> bid <span class="mono" style="color:#ECEEF1;">&#8377;58,000</span> on ThinkPad X1 Carbon</span>
+      <span class="tick-item"><span style="width:5px;height:5px;border-radius:999px;background:#3FBF8F;"></span><span class="mono" style="color:#656C77;">bidder_1d88a4</span> bid <span class="mono" style="color:#ECEEF1;">&#8377;18,500</span> on Teak writing desk</span>
+      <span class="tick-item"><span style="width:5px;height:5px;border-radius:999px;background:#3FBF8F;"></span><span class="mono" style="color:#656C77;">bidder_4c71e0</span> bid <span class="mono" style="color:#ECEEF1;">&#8377;24,500</span> on Canon EOS 200D</span>
+      <span class="tick-item"><span style="width:5px;height:5px;border-radius:999px;background:#3FBF8F;"></span><span class="mono" style="color:#656C77;">bidder_9f2b18</span> bid <span class="mono" style="color:#ECEEF1;">&#8377;58,000</span> on ThinkPad X1 Carbon</span>
+      <span class="tick-item"><span style="width:5px;height:5px;border-radius:999px;background:#3FBF8F;"></span><span class="mono" style="color:#656C77;">bidder_1d88a4</span> bid <span class="mono" style="color:#ECEEF1;">&#8377;18,500</span> on Teak writing desk</span>
+    </div>
+  </div>
+
+  <div class="sticky-head">
+    <div>
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 23px;">Live auctions</span>
+      <span style="font-size: 12.5px; color: #656C77; margin-left: 12px;">41 open</span>
+    </div>
+    <span class="label">Ending soonest</span>
+  </div>
+
+  <!-- CASCADE GRID -->
+  <div style="padding: 26px 36px 0; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px;">
+    <div class="card cascade"><div class="art" style="background: linear-gradient(58deg,#1e3a5f,#2d5a87);">CE</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Canon EOS 200D DSLR</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;24,500</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">4h 12m</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(31deg,#2b3a4a,#3f5468);">TX</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">ThinkPad X1 Carbon Gen 9</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;58,000</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">3d 1h</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(74deg,#3d2f4f,#5a4570);">SW</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Sony WH-1000XM4</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;14,500</span><span class="mono" style="font-size:11.5px;color:#FF8577;font-weight:500;">19m</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(12deg,#4a3728,#6b5140);">PT</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Professional tabla set</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;15,500</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">3d 20h</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(45deg,#1f4037,#2d5f4f);">TW</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Teak writing desk</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;18,500</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">7d</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(66deg,#4a2f3a,#6b4553);">BS</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Banarasi silk saree</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;16,500</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">3d 10h</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(23deg,#2f4538,#456b52);">RP</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Raspberry Pi 4 Model B</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;6,200</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">1d 6h</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(37deg,#3a3550,#524a75);">VH</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Vintage HMV gramophone</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;42,000</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">13d</span></div></div></div>
+    <div class="card cascade"><div class="art" style="background: linear-gradient(96deg,#42303a,#6b4a55);">KL</div><div style="padding:13px 14px 14px;"><div style="font-size:13.5px;font-weight:500;color:#C9CDD4;">Kolhapuri leather chappals</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:9px;"><span class="mono" style="font-size:19px;">&#8377;1,800</span><span class="mono" style="font-size:11.5px;color:#99A0AA;">1d 2h</span></div></div></div>
+  </div>
+
+  <!-- STAT BARS -->
+  <div style="padding: 46px 36px 0;">
+    <div class="label">Activity, last 24 hours</div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 26px; margin-top: 16px;">
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 13.5px; color: #C9CDD4;">Bids placed</span>
+          <span class="mono" style="font-size: 17px;">1,284</span>
+        </div>
+        <div class="bar-track"><div class="bar" style="width: 84%;"></div></div>
+      </div>
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 13.5px; color: #C9CDD4;">Auctions closed</span>
+          <span class="mono" style="font-size: 17px;">37</span>
+        </div>
+        <div class="bar-track"><div class="bar" style="width: 52%;"></div></div>
+      </div>
+      <div>
+        <div style="display: flex; align-items: baseline; justify-content: space-between;">
+          <span style="font-size: 13.5px; color: #C9CDD4;">Ending within the hour</span>
+          <span class="mono" style="font-size: 17px; color: #FF8577;">6</span>
+        </div>
+        <div class="bar-track"><div class="bar" style="width: 22%;"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTES -->
+  <div style="padding: 48px 36px 60px;">
+    <div style="height: 1px; background: #191D24; margin-bottom: 26px;"></div>
+    <div class="label">What is happening as you scroll</div>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 14px; margin-top: 15px;">
+      <div style="border: 1px solid #22272F; border-radius: 9px; padding: 15px 16px; background: #101318;">
+        <span class="tag">01</span>
+        <div style="font-size: 13px; font-weight: 600; margin-top: 10px;">Progress &amp; condense</div>
+        <div style="font-size: 11.5px; color: #99A0AA; margin-top: 7px; line-height: 1.6;">The blue rule at the top and the shrinking header both run on <span class="mono" style="color:#6098FF;">animation-timeline: scroll()</span>. No listener, no rAF loop, nothing on the main thread.</div>
+      </div>
+      <div style="border: 1px solid #22272F; border-radius: 9px; padding: 15px 16px; background: #101318;">
+        <span class="tag">02</span>
+        <div style="font-size: 13px; font-weight: 600; margin-top: 10px;">Parallax &amp; cascade</div>
+        <div style="font-size: 11.5px; color: #99A0AA; margin-top: 7px; line-height: 1.6;">The hero drifts and the cards rise on <span class="mono" style="color:#6098FF;">view()</span>. The stagger comes from offsetting each column's <span class="mono" style="color:#6098FF;">animation-range</span>, so a row lands as a diagonal.</div>
+      </div>
+      <div style="border: 1px solid rgba(224,163,58,.3); border-radius: 9px; padding: 15px 16px; background: rgba(224,163,58,.05);">
+        <span class="tag" style="background: rgba(224,163,58,.14); color: #E0A33A; border-color: rgba(224,163,58,.34);">Honest</span>
+        <div style="font-size: 13px; font-weight: 600; margin-top: 10px;">Every effect is wrapped</div>
+        <div style="font-size: 11.5px; color: #99A0AA; margin-top: 7px; line-height: 1.6;">All of it sits inside <span class="mono" style="color:#E0A33A;">@supports</span>. Where scroll-driven animation is unavailable the content is simply there, at full opacity. Content must never need an animation to be visible.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"$preview":{"width":1080,"height":900}}'>
+class Component extends DCLogic {}
+</script>
+</body>
+</html>

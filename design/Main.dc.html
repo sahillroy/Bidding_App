@@ -1,0 +1,345 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background: #0A0C0F; color: #ECEEF1; font-family: Archivo, 'Helvetica Neue', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: #6098FF; text-decoration: none; } a:hover { color: #8AB3FF; }
+    .mono { font-family: 'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+    .label { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #656C77; }
+
+    /* ═══════════════ THE CARD ═══════════════
+       Eight layers move on hover, on five different durations. The stagger is
+       what sells it: move everything on one timing and it reads as a switch.
+       All of it is transform/opacity — composited, no repaint, so 40 of these
+       stay cheap. */
+    .card {
+      position: relative; display: flex; flex-direction: column;
+      background: #101318; border: 1px solid #22272F; border-radius: 10px;
+      text-decoration: none; color: inherit;
+      transform-style: preserve-3d;
+      transform: perspective(1000px) translateY(0) rotateX(0) rotateY(0);
+      transition:
+        border-color 180ms cubic-bezier(.2,.8,.2,1),
+        box-shadow   220ms cubic-bezier(.2,.8,.2,1),
+        transform    300ms cubic-bezier(.2,.8,.2,1),
+        background   180ms cubic-bezier(.2,.8,.2,1);
+    }
+    .card:hover, .card.is-hover {
+      border-color: var(--a, #3E7BFA);
+      background: #12161D;
+      transform:
+        perspective(1000px)
+        translateY(-6px)
+        rotateX(var(--rx, 0deg))
+        rotateY(var(--ry, 0deg));
+      box-shadow:
+        0 0 0 1px color-mix(in oklab, var(--a) 45%, transparent),
+        0 22px 50px -18px color-mix(in oklab, var(--a) 60%, transparent),
+        0 3px 10px -3px rgba(0,0,0,.7);
+    }
+    .card:focus-visible { outline: 2px solid var(--a); outline-offset: 3px; border-color: var(--a); }
+
+    /* 1 · CURSOR SPOTLIGHT — a soft blue light that tracks the pointer across
+           the card. One delegated rAF-throttled listener writes two CSS vars. */
+    .spot {
+      position: absolute; inset: 0; border-radius: 10px; pointer-events: none; z-index: 3;
+      background: radial-gradient(260px circle at var(--mx,50%) var(--my,50%),
+                  color-mix(in oklab, var(--a) 16%, transparent), transparent 62%);
+      opacity: 0; transition: opacity 260ms cubic-bezier(.2,.8,.2,1);
+    }
+    .card:hover .spot, .card.is-hover .spot { opacity: 1; }
+
+    /* 2 · CORNER BRACKETS — precision detailing, drawn in from nothing.
+           This is the Spyker note: instrument markings, not decoration. */
+    .bracket {
+      position: absolute; width: 14px; height: 14px; pointer-events: none; z-index: 4;
+      border-color: var(--a); opacity: 0;
+      transition: opacity 220ms ease 60ms, transform 320ms cubic-bezier(.2,.8,.2,1) 60ms;
+    }
+    .bracket.tl { top: 7px;    left: 7px;    border-top: 1.5px solid; border-left: 1.5px solid;  border-top-left-radius: 4px;     transform: translate(5px, 5px); }
+    .bracket.tr { top: 7px;    right: 7px;   border-top: 1.5px solid; border-right: 1.5px solid; border-top-right-radius: 4px;    transform: translate(-5px, 5px); }
+    .bracket.bl { bottom: 7px; left: 7px;    border-bottom: 1.5px solid; border-left: 1.5px solid;  border-bottom-left-radius: 4px;  transform: translate(5px, -5px); }
+    .bracket.br { bottom: 7px; right: 7px;   border-bottom: 1.5px solid; border-right: 1.5px solid; border-bottom-right-radius: 4px; transform: translate(-5px, -5px); }
+    .card:hover .bracket, .card.is-hover .bracket { opacity: .85; transform: translate(0,0); }
+
+    .thumb { position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 9px 9px 0 0; }
+
+    /* 3 · IMAGE DRIFT — slowest layer, 480ms. Plus a counter-parallax nudge
+           so the art moves against the cursor rather than with it. */
+    .art {
+      position: absolute; inset: -6px;
+      display: grid; place-items: center;
+      font-size: 68px; font-weight: 700; letter-spacing: .06em; color: rgba(255,255,255,.16);
+      transform: scale(1) translate(0,0);
+      transition: transform 480ms cubic-bezier(.2,.8,.2,1), filter 320ms ease;
+    }
+    .card:hover .art, .card.is-hover .art {
+      transform: scale(1.07) translate(var(--px, 0px), var(--py, 0px));
+      filter: brightness(1.1) saturate(1.06);
+    }
+
+    /* 4 · SHINE SWEEP — one diagonal pass of light, 700ms. Fires once per
+           hover; does not loop, because a looping shimmer reads as a skeleton
+           loader, not as glass. */
+    .shine {
+      position: absolute; top: -60%; bottom: -60%; width: 55%; left: -75%;
+      background: linear-gradient(100deg, transparent, rgba(255,255,255,.16) 45%, rgba(255,255,255,.05) 60%, transparent);
+      transform: skewX(-18deg); pointer-events: none; z-index: 2;
+    }
+    .card:hover .shine, .card.is-hover .shine { animation: sweep 700ms cubic-bezier(.3,.7,.3,1) forwards; }
+    @keyframes sweep { to { left: 125%; } }
+
+    /* 5 · BLUE WASH — the "boxes turn blue" moment, kept to a tint. */
+    .wash {
+      position: absolute; inset: 0; z-index: 1; pointer-events: none;
+      background: linear-gradient(to top,
+        color-mix(in oklab, var(--a) 38%, transparent) 0%,
+        color-mix(in oklab, var(--a) 7%, transparent) 46%,
+        transparent 76%);
+      opacity: 0; transition: opacity 260ms cubic-bezier(.2,.8,.2,1);
+    }
+    .card:hover .wash, .card.is-hover .wash { opacity: 1; }
+
+    /* 6 · BADGE lifts and brightens */
+    .badge {
+      position: absolute; top: 10px; left: 10px; z-index: 5;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 9px; border-radius: 999px;
+      background: rgba(10,12,15,.78); border: 1px solid #2A303A; backdrop-filter: blur(8px);
+      font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #99A0AA;
+      transform: translateY(0);
+      transition: transform 260ms cubic-bezier(.2,.8,.2,1), border-color 200ms ease, color 200ms ease;
+    }
+    .card:hover .badge, .card.is-hover .badge { transform: translateY(-2px); border-color: color-mix(in oklab, var(--a) 50%, #2A303A); color: #C9CDD4; }
+    .badge.urgent { color: #FF8577; border-color: rgba(255,92,77,.42); background: rgba(38,14,12,.82); }
+    .badge.urgent .dot { animation: pulse 1.6s ease-in-out infinite; }
+    .dot { width: 5px; height: 5px; border-radius: 999px; background: currentColor; }
+    @keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.75); } }
+
+    .body { position: relative; z-index: 4; padding: 14px 15px 15px; display: flex; flex-direction: column; flex: 1; }
+    .title {
+      margin: 0; font-size: 14px; font-weight: 500; line-height: 1.35; color: #C9CDD4; letter-spacing: -.005em;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      transition: color 180ms ease, transform 260ms cubic-bezier(.2,.8,.2,1);
+    }
+    .card:hover .title, .card.is-hover .title { color: #FFFFFF; transform: translateX(2px); }
+
+    .price { font-family: 'IBM Plex Mono', monospace; font-size: 21px; font-weight: 500; letter-spacing: -.02em; color: #ECEEF1; font-variant-numeric: tabular-nums; }
+    .meta { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 11px; font-size: 12px; color: #99A0AA; }
+
+    /* 7 · REVEAL — always in the DOM at zero height, so nothing reflows. */
+    .cta {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 0; max-height: 0; opacity: 0; overflow: hidden;
+      color: var(--a); font-size: 12px; font-weight: 600; letter-spacing: .02em;
+      border-top: 1px solid color-mix(in oklab, var(--a) 22%, transparent);
+      transform: translateY(5px);
+      transition:
+        max-height 260ms cubic-bezier(.2,.8,.2,1),
+        opacity    220ms ease 60ms,
+        transform  260ms cubic-bezier(.2,.8,.2,1) 60ms,
+        margin-top 260ms cubic-bezier(.2,.8,.2,1),
+        padding-top 260ms cubic-bezier(.2,.8,.2,1);
+      padding-top: 0;
+    }
+    .card:hover .cta, .card.is-hover .cta { max-height: 40px; opacity: 1; transform: translateY(0); margin-top: 11px; padding-top: 10px; }
+    /* 8 · the arrow travels on its own, 80ms behind the row */
+    .cta svg { transition: transform 300ms cubic-bezier(.2,.8,.2,1) 80ms; }
+    .card:hover .cta svg, .card.is-hover .cta svg { transform: translateX(4px); }
+
+    /* ═══════════════ SCROLL ═══════════════
+       Native CSS scroll-driven animation — no JS, no IntersectionObserver.
+       Wrapped in @supports so that where it is unavailable the content is
+       simply THERE. Content must never depend on an animation to be visible. */
+    @supports (animation-timeline: view()) {
+      .reveal {
+        animation: rise linear both;
+        animation-timeline: view();
+        animation-range: entry 8% cover 26%;
+      }
+    }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(26px) scale(.985); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .pill {
+      display: inline-block; padding: 7px 14px; border-radius: 999px; border: 1px solid #22272F;
+      color: #99A0AA; font-size: 13px; white-space: nowrap;
+      transition: all 160ms cubic-bezier(.2,.8,.2,1);
+    }
+    .pill:hover { border-color: color-mix(in oklab, var(--a) 55%, #22272F); color: #ECEEF1; background: #14181E; transform: translateY(-1px); }
+    .pill.on { background: #ECEEF1; color: #0A0C0F; border-color: #ECEEF1; font-weight: 500; }
+
+    /* Reduced motion: colour survives, movement does not. */
+    @media (prefers-reduced-motion: reduce) {
+      .card, .art, .wash, .cta, .pill, .badge, .title, .bracket, .spot { transition-duration: 1ms !important; }
+      .card:hover, .card.is-hover { transform: none; }
+      .card:hover .art, .card.is-hover .art { transform: scale(1.02); }
+      .shine, .badge.urgent .dot { animation: none !important; }
+      .reveal { animation: none !important; opacity: 1 !important; transform: none !important; }
+    }
+  </style>
+</helmet>
+
+<div style="--a: {{accent}}; background: #0A0C0F; padding-bottom: 64px;">
+
+  <div style="display: flex; align-items: center; gap: 10px; padding: 9px 40px; background: rgba(224,163,58,.10); border-bottom: 1px solid rgba(224,163,58,.26); color: #E8BE79; font-size: 12.5px;">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#E0A33A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+    <span style="font-weight: 700; letter-spacing: .1em; color: #E0A33A; font-size: 11px;">DEMO</span>
+    <span style="opacity: .35;">|</span>
+    <span>This is a demonstration project. No real money moves and no real identity documents are stored. <strong style="color:#F0D3A0; font-weight:600;">Do not enter a real Aadhaar or PAN number.</strong></span>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 18px 40px; border-bottom: 1px solid #191D24;">
+    <div style="display: flex; align-items: baseline; gap: 3px;">
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 25px;">Bid</span>
+      <span style="font-family: 'Instrument Serif', Georgia, serif; font-size: 25px; color: {{accent}};">Kar</span>
+    </div>
+    <div style="flex: 1; max-width: 400px; position: relative; display: flex; align-items: center;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#656C77" stroke-width="2" stroke-linecap="round" style="position: absolute; left: 13px;"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <div style="width: 100%; padding: 9px 14px 9px 36px; border: 1px solid #22272F; border-radius: 8px; background: #0E1116; color: #656C77; font-size: 13px;">Search 41 live auctions</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <span style="font-size: 13px; color: #99A0AA;">Sell</span>
+      <span class="mono" style="font-size: 12px; color: #656C77; padding: 7px 12px; border: 1px solid #22272F; border-radius: 999px;">bidder_7f2a1c</span>
+    </div>
+  </div>
+
+  <div style="padding: 0 40px;">
+    <div style="display: flex; gap: 8px; padding: 20px 0 4px; flex-wrap: wrap;">
+      <span class="pill on">All</span><span class="pill">Electronics</span><span class="pill">Collectibles</span><span class="pill">Home &amp; Garden</span><span class="pill">Fashion</span><span class="pill">Books &amp; Media</span><span class="pill">Sports</span><span class="pill">Musical Instruments</span><span class="pill">Vehicles</span>
+    </div>
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin: 30px 0 18px;">
+      <div>
+        <h1 style="margin: 0; font-family: 'Instrument Serif', Georgia, serif; font-size: 40px; font-weight: 400; letter-spacing: -.015em; line-height: 1.05;">Live auctions</h1>
+        <p style="margin: 7px 0 0; font-size: 13.5px; color: #99A0AA;">41 open for bidding &middot; ending soonest first</p>
+      </div>
+      <span style="font-size: 12px; color: {{accent}}; letter-spacing: .04em;">Hover any card &mdash;</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px;">
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="8">
+        <a href="#" class="{{it.cls}}">
+          <div class="thumb">
+            <div class="art" style="background: {{it.grad}};">{{it.mark}}</div>
+            <div class="wash"></div>
+            <div class="shine"></div>
+            <span class="{{it.badgeCls}}"><span class="dot"></span>{{it.badge}}</span>
+          </div>
+          <span class="bracket tl"></span><span class="bracket tr"></span>
+          <span class="bracket bl"></span><span class="bracket br"></span>
+          <div class="spot"></div>
+          <div class="body">
+            <h3 class="title">{{it.title}}</h3>
+            <div class="meta">
+              <div>
+                <div class="label">{{it.priceLabel}}</div>
+                <div class="price" style="margin-top: 3px;">{{it.price}}</div>
+              </div>
+              <div style="text-align: right;">
+                <div class="mono" style="font-size: 12px;">{{it.bids}}</div>
+                <div class="mono" style="font-size: 12px; margin-top: 3px; color: {{it.timeColor}};">{{it.time}}</div>
+              </div>
+            </div>
+            <div class="cta">
+              <span>Place bid</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </div>
+          </div>
+        </a>
+      </sc-for>
+    </div>
+
+    <p style="margin: 26px 0 0; font-size: 11.5px; color: #4A5059; line-height: 1.65; max-width: 74ch;">
+      Card one is pinned to its hover state so the treatment is visible standing still. Hover the others &mdash; the light follows the cursor, the art drifts against it, and the corner brackets draw in.
+    </p>
+  </div>
+</div>
+</x-dc>
+
+<script data-dc-script data-props='{"accent":{"editor":"color","default":"#3E7BFA","options":["#3E7BFA","#4DA3FF","#5B6CFF","#2BC4D4"],"section":"Theme"},"$preview":{"width":1440,"height":1220}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    // Cursor tracking. ONE listener per card, coalesced into a single rAF, and
+    // it writes CSS custom properties only — no layout reads in the handler
+    // beyond one cached rect per enter. Skipped entirely for anyone who asked
+    // their system to reduce motion.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.card').forEach((card) => {
+        if (card.dataset.wired) return;
+        card.dataset.wired = '1';
+
+        let rect = null;
+        let queued = false;
+        let lastX = 0, lastY = 0;
+
+        const apply = () => {
+          queued = false;
+          if (!rect) return;
+          const px = (lastX - rect.left) / rect.width;
+          const py = (lastY - rect.top) / rect.height;
+          card.style.setProperty('--mx', (px * 100).toFixed(1) + '%');
+          card.style.setProperty('--my', (py * 100).toFixed(1) + '%');
+          // Tilt stays under 4deg. Past that it stops reading as a physical
+          // object and starts reading as a gimmick.
+          card.style.setProperty('--rx', ((0.5 - py) * 3.6).toFixed(2) + 'deg');
+          card.style.setProperty('--ry', ((px - 0.5) * 3.6).toFixed(2) + 'deg');
+          // Art drifts AGAINST the cursor — parallax, so the image feels like
+          // it sits behind the frame rather than painted on it.
+          card.style.setProperty('--px', ((0.5 - px) * 10).toFixed(1) + 'px');
+          card.style.setProperty('--py', ((0.5 - py) * 10).toFixed(1) + 'px');
+        };
+
+        card.addEventListener('pointerenter', () => { rect = card.getBoundingClientRect(); });
+        card.addEventListener('pointermove', (e) => {
+          lastX = e.clientX; lastY = e.clientY;
+          if (!queued) { queued = true; requestAnimationFrame(apply); }
+        });
+        card.addEventListener('pointerleave', () => {
+          rect = null;
+          ['--rx','--ry','--px','--py'].forEach((p) => card.style.removeProperty(p));
+        });
+      });
+    });
+  }
+
+  renderVals() {
+    const base = 'card reveal';
+    const rows = [
+      { mark: 'CE', grad: 'linear-gradient(58deg, #1e3a5f, #2d5a87)', title: 'Canon EOS 200D DSLR with 18-55mm lens', price: '₹24,500', priceLabel: 'Current bid', bids: '12 bids', time: '4h 12m', hot: false, first: true },
+      { mark: 'TX', grad: 'linear-gradient(31deg, #2b3a4a, #3f5468)', title: 'ThinkPad X1 Carbon Gen 9, 16GB RAM', price: '₹58,000', priceLabel: 'Current bid', bids: '3 bids', time: '3d 1h', hot: false },
+      { mark: 'SW', grad: 'linear-gradient(74deg, #3d2f4f, #5a4570)', title: 'Sony WH-1000XM4 wireless headphones', price: '₹14,500', priceLabel: 'Current bid', bids: '7 bids', time: '19m', hot: true },
+      { mark: 'PT', grad: 'linear-gradient(12deg, #4a3728, #6b5140)', title: 'Professional tabla set with case', price: '₹15,500', priceLabel: 'Starting bid', bids: '1 bid', time: '3d 20h', hot: false },
+      { mark: 'TW', grad: 'linear-gradient(45deg, #1f4037, #2d5f4f)', title: 'Teak wood writing desk, restored', price: '₹18,500', priceLabel: 'Current bid', bids: '5 bids', time: '7d', hot: false },
+      { mark: 'BS', grad: 'linear-gradient(66deg, #4a2f3a, #6b4553)', title: 'Banarasi silk saree, handloom', price: '₹16,500', priceLabel: 'Current bid', bids: '2 bids', time: '3d 10h', hot: false },
+      { mark: 'RP', grad: 'linear-gradient(23deg, #2f4538, #456b52)', title: 'Raspberry Pi 4 Model B, 8GB kit', price: '₹6,200', priceLabel: 'Starting bid', bids: '0 bids', time: '1d 6h', hot: false },
+      { mark: 'VH', grad: 'linear-gradient(37deg, #3a3550, #524a75)', title: 'Vintage HMV gramophone, working', price: '₹42,000', priceLabel: 'Current bid', bids: '9 bids', time: '13d', hot: false }
+    ];
+
+    return {
+      accent: this.props.accent ?? '#3E7BFA',
+      items: rows.map((r) => ({
+        ...r,
+        cls: r.first ? base + ' is-hover' : base,
+        badge: r.hot ? 'Ending soon' : 'Live',
+        badgeCls: r.hot ? 'badge urgent' : 'badge',
+        timeColor: r.hot ? '#FF8577' : '#C9CDD4'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

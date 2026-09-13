@@ -11,6 +11,7 @@ import {
 import { ListingCard } from "@/components/listing-card";
 import { CategoryNav } from "@/components/category-nav";
 import { SearchBar } from "@/components/search-bar";
+import { ScrollProgress } from "@/components/scroll-progress";
 
 export const dynamic = "force-dynamic";
 
@@ -59,13 +60,15 @@ export default async function CategoryPage({
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <>
+    <ScrollProgress />
+    <main className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-10">
+      <div className="flex flex-col gap-4 pt-7 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className="font-[family-name:var(--font-display)] text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[40px]">
             {category.name}
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
+          <p className="mt-2 text-[13.5px] text-muted-foreground">
             {query
               ? `${listings.length} ${listings.length === 1 ? "match" : "matches"} in this category`
               : `${total} ${total === 1 ? "auction" : "auctions"} open for bidding`}
@@ -84,13 +87,13 @@ export default async function CategoryPage({
       </div>
 
       {listings.length === 0 ? (
-        <div className="mt-16 text-center">
-          <p className="text-lg font-medium">
+        <div className="mt-24 mb-16 text-center">
+          <p className="font-[family-name:var(--font-display)] text-2xl">
             {query
               ? "Nothing matched that search here"
               : "No live auctions in this category"}
           </p>
-          <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-relaxed">
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
             {query
               ? "Try a broader term, or search across every category from the home page."
               : "Check back shortly, or browse another category above."}
@@ -108,5 +111,6 @@ export default async function CategoryPage({
         </div>
       )}
     </main>
+    </>
   );
 }

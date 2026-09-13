@@ -54,3 +54,8 @@ next-env.d.ts
 /playwright-report
 /blob-report
 /.vitest
+
+# Generated design-canvas bundle. ~2MB of editor payload, regenerated from the
+# .dc.html sources beside it and published at the artifact URL in docs.
+design/*-visual-direction.html
+/shots

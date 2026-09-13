@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import {
   browseListings,
   countLiveListings,
@@ -8,6 +9,7 @@ import {
 import { ListingCard } from "@/components/listing-card";
 import { CategoryNav } from "@/components/category-nav";
 import { SearchBar } from "@/components/search-bar";
+import { ScrollProgress } from "@/components/scroll-progress";
 
 /**
  * The public catalogue.
@@ -44,62 +46,78 @@ export default async function HomePage({
   ]);
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {query ? `Results for “${query}”` : "Live auctions"}
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            {query
-              ? `${listings.length} ${listings.length === 1 ? "match" : "matches"}`
-              : `${total} ${total === 1 ? "auction" : "auctions"} open for bidding`}
-          </p>
-        </div>
+    <>
+      <ScrollProgress />
 
-        <div className="w-full sm:max-w-xs">
-          <Suspense fallback={null}>
-            <SearchBar />
-          </Suspense>
-        </div>
-      </div>
-
-      <div className="mt-6">
-        <CategoryNav categories={categories} />
-      </div>
-
-      {listings.length === 0 ? (
-        <EmptyState query={query} />
-      ) : (
-        <>
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {listings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                serverNow={serverNow}
-              />
-            ))}
+      <main className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-10">
+        <div className="flex flex-col gap-4 pt-7 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="font-[family-name:var(--font-display)] text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[40px]">
+              {query ? (
+                <>
+                  Results for{" "}
+                  <span className="text-[var(--bk-accent)]">
+                    &ldquo;{query}&rdquo;
+                  </span>
+                </>
+              ) : (
+                "Live auctions"
+              )}
+            </h1>
+            <p className="mt-2 text-[13.5px] text-muted-foreground">
+              {query
+                ? `${listings.length} ${listings.length === 1 ? "match" : "matches"}`
+                : `${total} open for bidding · ending soonest first`}
+            </p>
           </div>
 
-          <Pagination
-            page={page}
-            hasMore={listings.length === PAGE_SIZE}
-            query={query}
-          />
-        </>
-      )}
-    </main>
+          <div className="w-full sm:max-w-xs">
+            <Suspense fallback={null}>
+              <SearchBar />
+            </Suspense>
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <CategoryNav categories={categories} />
+        </div>
+
+        {listings.length === 0 ? (
+          <EmptyState query={query} />
+        ) : (
+          <>
+            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {listings.map((listing, i) => (
+                <ListingCard
+                  key={listing.id}
+                  listing={listing}
+                  serverNow={serverNow}
+                  // The first row is above the fold on most screens; letting it
+                  // animate in means a visitor watches their content arrive.
+                  priority={i < 4}
+                />
+              ))}
+            </div>
+
+            <Pagination
+              page={page}
+              hasMore={listings.length === PAGE_SIZE}
+              query={query}
+            />
+          </>
+        )}
+      </main>
+    </>
   );
 }
 
 function EmptyState({ query }: { query?: string }) {
   return (
-    <div className="mt-16 text-center">
-      <p className="text-lg font-medium">
+    <div className="mt-24 mb-16 text-center">
+      <p className="font-[family-name:var(--font-display)] text-2xl">
         {query ? "Nothing matched that search" : "No auctions are live yet"}
       </p>
-      <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-relaxed">
+      <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted-foreground">
         {query ? (
           <>
             Try fewer words, or a more general term. Search looks at listing
@@ -113,6 +131,14 @@ function EmptyState({ query }: { query?: string }) {
           </>
         )}
       </p>
+      {query && (
+        <Link
+          href="/"
+          className="mt-6 inline-block rounded-lg border border-border px-4 py-2 text-sm transition-colors duration-200 hover:border-[rgba(62,123,250,0.55)] hover:text-[var(--bk-accent)]"
+        >
+          Browse everything
+        </Link>
+      )}
     </div>
   );
 }
@@ -128,7 +154,7 @@ function Pagination({
 }) {
   if (page === 1 && !hasMore) return null;
 
-  const base = (n: number) => {
+  const href = (n: number) => {
     const p = new URLSearchParams();
     if (query) p.set("q", query);
     if (n > 1) p.set("page", String(n));
@@ -136,31 +162,34 @@ function Pagination({
     return s ? `/?${s}` : "/";
   };
 
+  const base =
+    "rounded-lg border px-4 py-2 transition-colors duration-200 ease-[var(--bk-ease)]";
+  const live = `${base} border-border hover:border-[rgba(62,123,250,0.55)] hover:text-[var(--bk-accent)]`;
+  const dead = `${base} border-border/50 text-[var(--bk-subtle)]/50`;
+
   return (
     <nav
       aria-label="Pagination"
-      className="mt-10 flex items-center justify-center gap-3 text-sm"
+      className="mt-12 flex items-center justify-center gap-3 text-sm"
     >
       {page > 1 ? (
-        <a href={base(page - 1)} className="hover:bg-muted rounded-lg border px-4 py-2">
+        <Link href={href(page - 1)} className={live}>
           Previous
-        </a>
+        </Link>
       ) : (
-        <span className="text-muted-foreground/50 rounded-lg border px-4 py-2">
-          Previous
-        </span>
+        <span className={dead}>Previous</span>
       )}
 
-      <span className="text-muted-foreground tabular-nums">Page {page}</span>
+      <span className="tnum px-2 font-mono text-muted-foreground">
+        Page {page}
+      </span>
 
       {hasMore ? (
-        <a href={base(page + 1)} className="hover:bg-muted rounded-lg border px-4 py-2">
+        <Link href={href(page + 1)} className={live}>
           Next
-        </a>
+        </Link>
       ) : (
-        <span className="text-muted-foreground/50 rounded-lg border px-4 py-2">
-          Next
-        </span>
+        <span className={dead}>Next</span>
       )}
     </nav>
   );
