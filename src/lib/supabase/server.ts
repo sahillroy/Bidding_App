@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "@/types/database";
 
 /**
  * Supabase client for Server Components, Server Actions and Route Handlers.
@@ -16,7 +17,7 @@ import { cookies } from "next/headers";
 export async function createClient() {
   const cookieStore = await cookies();
 
-  return createServerClient(
+  return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -76,7 +77,7 @@ export function createAdminClient() {
     );
   }
 
-  return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
+  return createServerClient<Database>(process.env.NEXT_PUBLIC_SUPABASE_URL!, key, {
     cookies: {
       // No cookies: this client is deliberately session-less. It acts as the
       // system, not as a user, so auth.uid() is null inside its queries.
