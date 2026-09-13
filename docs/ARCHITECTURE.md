@@ -1,7 +1,7 @@
 # Architecture
 
-> **Status:** Phase 0. This document grows with each phase. Sections marked
-> _(Phase N)_ describe what is planned, not what exists.
+> **Status:** Phase 3. Sections marked _(Phase N)_ for N > 3 describe what is
+> planned, not what exists.
 
 ---
 
@@ -86,6 +86,25 @@ must not be able to leak data.
 The anon key being public is not a leak. It is a public identifier whose
 capabilities are entirely defined by RLS. The **service role key** is the real
 secret: it bypasses RLS completely.
+
+## Selling and moderation _(Phase 3)_
+
+The seller wizard writes **drafts** through the ordinary Supabase client.
+The INSERT policy requires `status = 'draft'`, so a crafted POST cannot
+publish. Submit, approve and reject go through `security definer` functions
+(`submit_listing`, `approve_listing`, `reject_listing`) because
+`auction_events` has no INSERT policy — only those functions may write the
+audit trail.
+
+Approve takes the listing live immediately (see D-7 in
+[SECURITY_NOTES.md](./SECURITY_NOTES.md)). The public catalogue still cannot
+see a row until that happens: the listings SELECT policy excludes
+`draft`, `pending_review` and `rejected`.
+
+Photos live in the public `listing-images` Storage bucket. The path is
+`{seller_id}/{listing_id}/{image_id}.webp`. Public read, seller-prefixed
+write. The 8-image cap is a CHECK on `listing_images.sort_order` (0–7) as
+well as an application limit.
 
 ## Why auctions do not close on a cron _(Phase 5)_
 

@@ -2,9 +2,10 @@
 
 The schema, and the reasoning behind each Row Level Security policy.
 
-> **Status:** migrations `0001`–`0011` are applied and **verified against a
-> real Postgres 17.6** via the local Supabase stack. The RLS suite
-> (`npm run test:integration`) passes.
+> **Status:** migrations `0001`–`0012` are applied. The RLS suite
+> (`npm run test:integration`) covers Phase 3's acceptance criterion:
+> a seller-created listing is invisible to `anon` until `approve_listing`
+> runs.
 
 ---
 
@@ -286,3 +287,33 @@ evaluated inside the `place_bid` transaction. Anchoring a countdown to the
 application clock instead could show a timer that disagrees with the rule being
 enforced — a bidder watching "3 seconds left" on an auction the database has
 already closed.
+
+---
+
+## Phase 3 additions
+
+### `listing-images` bucket — migration 0012
+
+A public Storage bucket. Listing photographs are meant to be seen; signed
+URLs would add expiry handling to every card for no anonymity gain. Writes
+are scoped to `{auth.uid()}/…`. Only `image/webp` is an allowed MIME type.
+The object size cap is 5 MiB; the application limit is 2 MiB after the
+browser re-encodes.
+
+### `submit_listing` / `approve_listing` / `reject_listing` — migration 0012
+
+`security definer`, `search_path = public, pg_temp` (D-1). These are the
+only writers of `auction_events` for the review flow — that table has no
+INSERT policy.
+
+`approve_listing` writes `approved` then `went_live` and sets `starts_at` /
+`ends_at` from the database clock. Seller-supplied timestamps are ignored.
+See D-7 in [SECURITY_NOTES.md](./SECURITY_NOTES.md).
+
+`created` is written at **submit** time, not on INSERT. An insert trigger
+would leave every draft with an `auction_events` row; that table is
+append-only and references listings with `ON DELETE RESTRICT`, which would
+make the "sellers delete their own drafts" policy in 0005 impossible to
+satisfy. A draft with no events can still be deleted. Once it is submitted,
+the audit trail exists and the row cannot be erased.
+

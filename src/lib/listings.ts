@@ -1,4 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { publicListingImageUrl } from "@/lib/listings/images";
+import type { CategoryRow } from "@/lib/listings/display";
+
+export type { CategoryRow } from "@/lib/listings/display";
+export { CONDITION_LABELS } from "@/lib/listings/display";
 
 /**
  * Read-side queries for the public catalogue.
@@ -30,14 +35,7 @@ export type ListingRow = {
   category_id: string;
   seller_id: string;
   created_at: string;
-};
-
-export type CategoryRow = {
-  id: string;
-  slug: string;
-  name: string;
-  parent_id: string | null;
-  sort_order: number;
+  coverUrl?: string | null;
 };
 
 const LISTING_COLUMNS =
@@ -138,7 +136,7 @@ export async function browseListings(opts: {
       p_offset: offset,
     });
     if (error) return [];
-    return (data ?? []) as ListingRow[];
+    return attachCoverUrls((data ?? []) as ListingRow[]);
   }
 
   let q = supabase
@@ -153,7 +151,7 @@ export async function browseListings(opts: {
   }
 
   const { data } = await q;
-  return (data ?? []) as unknown as ListingRow[];
+  return attachCoverUrls((data ?? []) as unknown as ListingRow[]);
 }
 
 export async function countLiveListings(
@@ -174,7 +172,34 @@ export async function countLiveListings(
 export type ListingDetail = ListingRow & {
   category: { slug: string; name: string } | null;
   seller_handle: string | null;
+  images: { id: string; url: string; sort_order: number }[];
 };
+
+async function attachCoverUrls(listings: ListingRow[]): Promise<ListingRow[]> {
+  if (listings.length === 0) return listings;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("listing_images")
+    .select("listing_id, storage_path, sort_order")
+    .in(
+      "listing_id",
+      listings.map((row) => row.id),
+    )
+    .order("sort_order", { ascending: true });
+
+  const coverByListing = new Map<string, string>();
+  for (const row of data ?? []) {
+    if (!coverByListing.has(row.listing_id)) {
+      coverByListing.set(row.listing_id, publicListingImageUrl(row.storage_path));
+    }
+  }
+
+  return listings.map((listing) => ({
+    ...listing,
+    coverUrl: coverByListing.get(listing.id) ?? null,
+  }));
+}
 
 /**
  * A single listing, with its seller's HANDLE — never the seller's uuid or name.
@@ -196,11 +221,18 @@ export async function getListing(id: string): Promise<ListingDetail | null> {
 
   if (!data) return null;
 
-  const { data: seller } = await supabase
-    .from("public_profiles")
-    .select("handle")
-    .eq("id", data.seller_id)
-    .maybeSingle();
+  const [{ data: seller }, { data: imageRows }] = await Promise.all([
+    supabase
+      .from("public_profiles")
+      .select("handle")
+      .eq("id", data.seller_id)
+      .maybeSingle(),
+    supabase
+      .from("listing_images")
+      .select("id, storage_path, sort_order")
+      .eq("listing_id", id)
+      .order("sort_order", { ascending: true }),
+  ]);
 
   // PostgREST returns an embedded to-one relation as an object, but the
   // generated types describe it as possibly an array. Normalise once here so
@@ -209,10 +241,18 @@ export async function getListing(id: string): Promise<ListingDetail | null> {
     ? (data.category[0] ?? null)
     : data.category;
 
+  const images = (imageRows ?? []).map((row) => ({
+    id: row.id,
+    url: publicListingImageUrl(row.storage_path),
+    sort_order: row.sort_order,
+  }));
+
   return {
     ...data,
     category,
     seller_handle: seller?.handle ?? null,
+    coverUrl: images[0]?.url ?? null,
+    images,
   } as ListingDetail;
 }
 
@@ -229,10 +269,3 @@ export async function getBidHistory(listingId: string) {
   return data ?? [];
 }
 
-export const CONDITION_LABELS: Record<string, string> = {
-  new: "New",
-  like_new: "Like new",
-  good: "Good",
-  fair: "Fair",
-  for_parts: "For parts",
-};

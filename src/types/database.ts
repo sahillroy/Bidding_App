@@ -997,6 +997,12 @@ export type Database = {
         }
       }
       server_now: { Args: never; Returns: string }
+      submit_listing: { Args: { p_listing_id: string }; Returns: string }
+      approve_listing: { Args: { p_listing_id: string }; Returns: string }
+      reject_listing: {
+        Args: { p_listing_id: string; p_note: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

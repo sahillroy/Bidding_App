@@ -1,8 +1,8 @@
 # Auction rules
 
-> **Status:** Phase 0 — placeholder. Implemented across Phases 4 and 5. The
-> authoritative specification is §6 and §7 of
-> [implementationplan.md](./implementationplan.md).
+> **Status:** Phase 3 has the listing lifecycle as far as go-live. Bidding
+> and settlement are Phases 4 and 5. The authoritative specification is §6
+> and §7 of [implementationplan.md](./implementationplan.md).
 
 This file will state the rules in plain English, so that a non-programmer can
 check the behaviour without reading SQL.
@@ -40,3 +40,10 @@ rejected if it is now too low.
 not, they take a strike and the item is offered to the runner-up at the
 runner-up's own bid — if the seller agrees. One strike suspends an account; two
 bans it permanently.
+
+**Before it goes live (Phase 3).** A seller writes a draft, adds photos, and
+submits it. An administrator checks it against the prohibited-goods list and
+a price-sanity flag. Approve takes the auction live immediately for the
+duration the seller chose. Reject returns it to the seller with a note.
+An unapproved listing is invisible on the public site because the database
+refuses to return it, not because the page hides it.

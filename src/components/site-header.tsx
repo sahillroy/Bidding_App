@@ -26,6 +26,7 @@ export async function SiteHeader() {
   */
   let user: { id: string } | null = null;
   let handle: string | null = null;
+  let isAdmin = false;
 
   try {
     const supabase = await createClient();
@@ -37,10 +38,11 @@ export async function SiteHeader() {
     if (user) {
       const { data } = await supabase
         .from("profiles")
-        .select("handle")
+        .select("handle, role")
         .eq("id", user.id)
         .single();
       handle = data?.handle ?? null;
+      isAdmin = data?.role === "admin";
     }
   } catch {
     // Rendered signed-out. See above.
@@ -54,8 +56,16 @@ export async function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-2">
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/sell">Sell</Link>
+          </Button>
           {user ? (
             <>
+              {isAdmin && (
+                <Button asChild size="sm" variant="ghost">
+                  <Link href="/admin">Admin</Link>
+                </Button>
+              )}
               <Link
                 href="/account"
                 className="text-muted-foreground hover:text-foreground font-mono text-xs transition-colors"

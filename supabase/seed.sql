@@ -240,3 +240,88 @@ begin
     end if;
   end loop;
 end $$;
+
+
+-- ---------------------------------------------------------------------------
+-- Phase 3 demo rows: the moderation queue must not be empty after a reset.
+--
+-- One ordinary pending listing, one with a starting price far outside the
+-- category median (the "laptop for 10 crore" case), and one rejected listing
+-- so a seller can see a review_note. All synthetic. No images — Storage
+-- objects cannot be seeded as files here; the wizard is how real photos
+-- arrive. The pending rows are for the admin queue, not for submit_listing.
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  v_seller uuid := '22222222-2222-4222-8222-000000000001';
+  v_electronics uuid;
+begin
+  select id into v_electronics from public.categories where slug = 'electronics';
+
+  if not exists (
+    select 1 from public.listings
+     where title = 'Refurbished inkjet printer, working'
+       and seller_id = v_seller
+  ) then
+    insert into public.listings (
+      seller_id, title, description, category_id, condition,
+      starting_price, bid_increment, duration_seconds, status
+    ) values (
+      v_seller,
+      'Refurbished inkjet printer, working',
+      'Colour inkjet, recently serviced with new print heads. Prints a clean nozzle check. Includes a starter set of aftermarket ink. No original box.',
+      v_electronics,
+      'good',
+      350000,
+      25000,
+      86400,
+      'pending_review'
+    );
+  end if;
+
+  if not exists (
+    select 1 from public.listings
+     where title = 'Gaming laptop listed at ten crore'
+       and seller_id = v_seller
+  ) then
+    insert into public.listings (
+      seller_id, title, description, category_id, condition,
+      starting_price, bid_increment, duration_seconds, status
+    ) values (
+      v_seller,
+      'Gaming laptop listed at ten crore',
+      'A mid-range gaming laptop. The starting price is intentionally absurd so the admin queue can demonstrate the price-sanity flag from the brief.',
+      v_electronics,
+      'good',
+      10000000000,
+      500000,
+      604800,
+      'pending_review'
+    );
+  end if;
+
+  if not exists (
+    select 1 from public.listings
+     where title = 'Assorted charging cables, mixed condition'
+       and seller_id = v_seller
+  ) then
+    insert into public.listings (
+      seller_id, title, description, category_id, condition,
+      starting_price, bid_increment, duration_seconds,
+      status, review_note, reviewed_by, reviewed_at
+    ) values (
+      v_seller,
+      'Assorted charging cables, mixed condition',
+      'A box of USB cables of various lengths and connectors. Some work, some do not. Sold as a lot.',
+      v_electronics,
+      'fair',
+      20000,
+      1000,
+      3600,
+      'rejected',
+      'Please list items individually with a clear photo of each. A mixed lot of cables is too vague for a buyer to bid on.',
+      '22222222-2222-4222-8222-000000000099',
+      now() - interval '1 day'
+    );
+  end if;
+end $$;

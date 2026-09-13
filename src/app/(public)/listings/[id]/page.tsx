@@ -88,10 +88,28 @@ export default async function ListingPage({
             <ListingImage
               listingId={listing.id}
               title={listing.title}
+              src={listing.images[0]?.url ?? listing.coverUrl}
               className="h-full w-full object-cover"
               priority
             />
           </div>
+          {listing.images.length > 1 && (
+            <ul className="mt-3 grid grid-cols-4 gap-2">
+              {listing.images.slice(1).map((image) => (
+                <li
+                  key={image.id}
+                  className="bg-muted aspect-[4/3] overflow-hidden rounded-md border"
+                >
+                  <ListingImage
+                    listingId={listing.id}
+                    title={listing.title}
+                    src={image.url}
+                    className="h-full w-full object-cover"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
 
           <section className="mt-8">
             <h2 className="text-sm font-semibold tracking-wide uppercase">

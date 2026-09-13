@@ -112,6 +112,25 @@ dependency addition, recoverable only by deleting `node_modules` and
 Vitest 4 is vite/esbuild based and needs no native binding. Symptom to
 recognise if someone upgrades: `Cannot find module '@rolldown/binding-...'`.
 
+### D-7 · Approve goes live immediately; QStash close is Phase 5
+
+**Phase 3.**
+
+Plan §8 says approve moves the listing to `approved` and schedules go-live.
+The scheduler is QStash, which is Phase 5. `approve_listing` therefore records
+both audit events (`approved`, then `went_live`) and lands the row on `live`
+in the same transaction, with delay = 0.
+
+`starts_at` and `ends_at` are always written from `now()` plus
+`duration_seconds`. They are never taken from the seller. Those columns are
+grantable to the `authenticated` role (admins share that role, so they cannot
+be revoked from sellers only), which means a crafted draft update could store
+a nonsense end time. The function ignores whatever is there.
+
+Phase 5 inserts the QStash close message between the two events. The
+acceptance criterion — a seller-created listing is invisible until an admin
+approves it — does not depend on delayed go-live.
+
 ---
 
 ## Known weaknesses
@@ -149,6 +168,20 @@ bid placement specifically needs protection against automated sniping.
 seven days of inactivity. Mitigated by the keep-alive workflow
 (`.github/workflows/keepalive.yml`) and by committing **schema-only** `pg_dump`
 snapshots. **Never commit user data.**
+
+### W-5 · Listing-image objects can be orphaned
+
+**Phase 3.** Storage RLS scopes writes to `{auth.uid()}/…`. The
+`listing_images` row is what attaches a file to a listing, and that insert is
+itself RLS-protected. A seller can still upload a file to their own prefix
+that is never referenced by a row — it counts against the 1 GB free quota and
+is not served by the catalogue. Acceptable for the demo. A production sweeper
+would delete unreferenced objects.
+
+WebP conversion runs in the browser. The Server Action re-checks magic bytes
+and size, so a client that skips compression cannot store a JPEG, but a
+production build should re-encode on the server so the pipeline does not
+depend on `canvas.toBlob`.
 
 ---
 

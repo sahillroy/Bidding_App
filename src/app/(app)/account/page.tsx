@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { logout } from "../../(auth)/actions";
 import { Button } from "@/components/ui/button";
@@ -51,11 +52,16 @@ export default async function AccountPage() {
         </p>
       </div>
 
-      <form action={logout} className="mt-8">
-        <Button type="submit" variant="outline">
-          Sign out
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Button asChild>
+          <Link href="/sell">Your listings</Link>
         </Button>
-      </form>
+        <form action={logout}>
+          <Button type="submit" variant="outline">
+            Sign out
+          </Button>
+        </form>
+      </div>
     </main>
   );
 }

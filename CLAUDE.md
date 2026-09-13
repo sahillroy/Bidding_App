@@ -70,7 +70,30 @@ docs/                architecture, data model, auction rules, compliance
 
 ## Current state
 
-Phase: **2 complete and verified, awaiting Phase 3**.
+Phase: **3 complete, awaiting Phase 4**.
+
+Done in Phase 3:
+- Seller wizard at `/sell` and `/sell/new` / `/sell/[id]`: details → photos →
+  pricing → duration → review. Drafts are private; submit calls `submit_listing`
+- Images: browser canvas → WebP, 8-image cap, public `listing-images` bucket
+  (migration 0012). Server re-checks magic bytes and size. No new dependency
+- Admin queue at `/admin/listings` with the §2.5 prohibited-goods checklist
+  and a price-sanity flag (10× / 0.1× the category median; ₹10 lakh if fewer
+  than 3 live peers). Flag only — never auto-reject
+- `approve_listing` / `reject_listing` / `submit_listing`: security definer,
+  pinned `search_path`. Approve writes `approved` then `went_live` and takes
+  the row live immediately (D-7). QStash close scheduling is Phase 5
+- Seed: two pending listings (one ordinary, one ₹10 crore laptop) and one
+  rejected listing so the queue is demoable after `db:reset`
+- Acceptance: a seller-created listing is invisible to `anon` and to search
+  until an admin approves it. Covered by `tests/integration/rls.test.ts`
+- `npm run setup:local` for a Docker machine: writes local CLI JWTs into
+  `.env.local`, starts Supabase, resets migrations + seed
+- Owner-laptop checks: typecheck, lint, compliance, 56 unit tests, `next build`
+  all green. RLS suite (22 tests) and the browser click-path need Docker —
+  not present on the owner laptop. Not signed off until a Docker machine
+  runs `test:integration` and the README acceptance path
+- Session hand-off for the next chat: `context.md`
 
 Done in Phase 2:
 - Public catalogue at `/`, category pages, listing detail — all server-rendered
@@ -143,24 +166,22 @@ Deviations from the plan, each recorded in `docs/SECURITY_NOTES.md`:
 - **Vitest 4, not 5** (D-6) — Vitest 5 needs a native rolldown binding that npm
   drops from the lockfile on every targeted install. Do not "upgrade" it back
 
-**Still outstanding: the Vercel deploy.** Deferred from Phase 0 to the end of
-Phase 1 at the owner's request, against the plan's advice in §11, and now
-overdue. No hosted Supabase project exists either — everything so far runs
+**Vercel deploy is deferred until Phases 0–7 are complete**, at the owner's
+request. No hosted Supabase project exists either — everything so far runs
 against the local stack. The keep-alive workflow stays inert until both exist
 and its repo secrets are set.
 
-Next: Phase 3 — selling and moderation: the listing wizard, image upload to
-Supabase Storage, and the admin approval queue.
+Next: Phase 4 — the bidding engine. Do not end Phase 4 until the 50-concurrent
+bid test passes.
 
-**Before Phase 3: raise Docker memory.** The storage container fails its health
-check at the current 3.7 GB allocation, and Phase 3 needs Storage for image
-uploads. Docker Desktop → Settings → Resources → 6 GB or more.
+**Storage still needs Docker memory ≥ 6 GB.** The storage container failed its
+health check at ~3.7 GB. Uploads need it healthy.
 
-Local development:
-`npm run db:start` (needs Docker) · `npm run db:reset` · `npm run test:integration`
+Local development (needs Docker Desktop, **≥ 6 GB RAM**):
+`npm run setup:local` · `npm run test:integration` · `npm run dev`
 Studio at http://127.0.0.1:54323, mail catcher at http://127.0.0.1:54324.
 
-Update this section at the end of every phase.
+Update this section **and `context.md`** at the end of every phase.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

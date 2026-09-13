@@ -58,43 +58,73 @@ service — see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for why.
 
 ## Running it locally
 
+Node 24 or newer (`.nvmrc` pins 24.8). Docker Desktop is required for the
+database, auth, and image uploads. Give Docker **at least 6 GB of RAM**
+(Settings → Resources). At ~3.7 GB the Storage container fails its health
+check and uploads die.
+
 ```bash
-git clone https://github.com/sahillroy/Bidding_App.git
+# If you received a copy of this folder (USB / zip / this branch), cd into it.
+# If you cloned GitHub, also: git checkout phase-3/selling-and-moderation
 cd Bidding_App
 npm ci
-cp .env.example .env.local   # then fill in your own values
+npm run setup:local
+npm run test:integration
 npm run dev
 ```
 
-Node 24 or newer (`.nvmrc` pins the exact version).
+`setup:local` starts Dockerized Supabase, applies migrations `0001`–`0012`,
+loads the seed, and writes `.env.local` with the published local-stack keys
+(the same on every machine; they are not secrets).
 
 | Command | What it does |
 |---|---|
+| `npm run setup:local` | Docker check, `.env.local`, `supabase start`, `db reset` |
 | `npm run dev` | development server on http://localhost:3000 |
 | `npm run build` | production build |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` | ESLint |
 | `npm test` | Vitest in watch mode |
 | `npm run test:run` | Vitest once, as CI runs it |
-| `npm run test:integration` | the Row Level Security suite (needs a database) |
+| `npm run test:integration` | the Row Level Security suite (needs the local stack) |
 | `npm run check:compliance` | the legal-constraint tripwire described below |
-| `npm run db:start` | local Supabase stack — Postgres, Auth, Storage (needs Docker) |
-| `npm run db:reset` | re-apply every migration from scratch |
+| `npm run db:start` | start the local stack without resetting data |
+| `npm run db:stop` | stop the local stack |
+| `npm run db:status` | print local URLs and keys |
+| `npm run db:reset` | re-apply every migration from scratch and re-seed |
 | `npm run db:push` | apply migrations to the linked hosted project |
-
-### Running against a real database
-
-```bash
-npm run db:start          # prints the local URL and keys
-npm run db:reset          # applies supabase/migrations in order
-npm run test:integration  # 14 RLS tests
-```
-
-`supabase start` prints an anon key and a service role key; put them in
-`.env.local`. They are the same on every machine and are not secrets.
 
 Studio is at http://127.0.0.1:54323 and the local mail catcher at
 http://127.0.0.1:54324.
+
+### Demo logins
+
+Password for every seeded account: `demo-password-not-secret`
+
+| Email | What they can do |
+|---|---|
+| `admin@example.test` | `/admin/listings` — pending queue, price-sanity flag |
+| `seller-anaya@example.test` | `/sell` — one rejected listing and two pending ones |
+
+### Phase 3 acceptance path (what to click)
+
+1. Open http://localhost:3000 in a **private window**. The live catalogue
+   is visible. “Gaming laptop listed at ten crore” is **not** — it is
+   `pending_review`.
+2. Search that title. Zero results. Search is not `security definer`, so
+   unapproved listings stay unsearchable.
+3. Sign in as the admin. `/admin/listings` shows the pending rows. The
+   ten-crore laptop is price-flagged (10× the electronics median).
+4. Sign in as Anaya, or create a new account. `/sell` → **List an item**.
+   Walk the wizard (details → photos → pricing → duration → review), add
+   at least one photo, submit.
+5. Confirm the new listing is absent from `/` and from search.
+6. As admin, tick the prohibited-goods checklist and approve. The listing
+   must then appear on `/` and be searchable.
+
+That is the Phase 3 acceptance criterion: a seller-created listing is
+invisible publicly until an admin approves it. The database enforces it,
+not the page.
 
 ### The compliance check
 
@@ -152,6 +182,7 @@ Worth more than the code, in an interview:
 
 | Document | Contents |
 |---|---|
+| [context.md](./context.md) | session hand-off: what is built, what is next, how to test |
 | [implementationplan.md](./docs/implementationplan.md) | the full specification and build order |
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | system shape, trust boundaries, request flows |
 | [DATA_MODEL.md](./docs/DATA_MODEL.md) | schema and the reasoning behind each RLS policy |
@@ -167,7 +198,7 @@ Worth more than the code, in an interview:
 - [x] **Phase 0** — Foundations: scaffold, CI, compliance guard, docs
 - [x] **Phase 1** — Data model and auth: 9 migrations, RLS on every table, email/password auth
 - [x] **Phase 2** — Public browsing: listing grid, categories, full-text search, seed data
-- [ ] **Phase 3** — Selling and moderation
+- [x] **Phase 3** — Selling and moderation: listing wizard, Storage uploads, admin queue
 - [ ] **Phase 4** — The bidding engine
 - [ ] **Phase 5** — Closure and settlement
 - [ ] **Phase 6** — Simulated KYC and payment

@@ -325,6 +325,145 @@ describeIfConfigured("Row Level Security", () => {
     });
   });
 
+  describe("selling and moderation (Phase 3)", () => {
+    async function insertDraftAs(user: TestUser, title: string) {
+      const { data: cat } = await admin
+        .from("categories")
+        .select("id")
+        .limit(1)
+        .single();
+
+      const { data, error } = await user.client
+        .from("listings")
+        .insert({
+          seller_id: user.id,
+          title,
+          description: "A draft used by the Phase 3 RLS suite.",
+          category_id: cat!.id,
+          condition: "good",
+          starting_price: 100000,
+          bid_increment: 5000,
+          duration_seconds: 3600,
+          status: "draft",
+        })
+        .select("id")
+        .single();
+
+      if (error) throw error;
+      return data!.id as string;
+    }
+
+    it("lets a seller create a draft that an anonymous client cannot see", async () => {
+      const id = await insertDraftAs(alice, "Alice draft for RLS");
+
+      const { data: own } = await alice.client
+        .from("listings")
+        .select("id, status")
+        .eq("id", id)
+        .maybeSingle();
+      expect(own?.status).toBe("draft");
+
+      const { data: seen } = await anonClient
+        .from("listings")
+        .select("id")
+        .eq("id", id);
+      expect(seen ?? []).toHaveLength(0);
+    });
+
+    it("refuses a seller inserting a listing that is already live", async () => {
+      const { data: cat } = await admin
+        .from("categories")
+        .select("id")
+        .limit(1)
+        .single();
+
+      const { error } = await alice.client.from("listings").insert({
+        seller_id: alice.id,
+        title: "Should not skip moderation",
+        description: "A crafted insert that tries to go live immediately.",
+        category_id: cat!.id,
+        condition: "good",
+        starting_price: 100000,
+        bid_increment: 5000,
+        duration_seconds: 3600,
+        status: "live",
+        starts_at: new Date().toISOString(),
+        ends_at: new Date(Date.now() + 3600_000).toISOString(),
+      });
+
+      expect(error).not.toBeNull();
+    });
+
+    it("refuses submit_listing when the listing has no photo", async () => {
+      const id = await insertDraftAs(alice, "Draft without a photo");
+      const { error } = await alice.client.rpc("submit_listing", {
+        p_listing_id: id,
+      });
+      expect(error).not.toBeNull();
+      expect(error!.message).toMatch(/LISTING_NEEDS_IMAGE/);
+    });
+
+    it("keeps a submitted listing invisible until an admin approves it", async () => {
+      const id = await insertDraftAs(alice, "Submitted then approved");
+
+      const { error: imageError } = await alice.client
+        .from("listing_images")
+        .insert({
+          listing_id: id,
+          storage_path: `${alice.id}/${id}/test.webp`,
+          sort_order: 0,
+        });
+      expect(imageError).toBeNull();
+
+      const { error: submitError } = await alice.client.rpc("submit_listing", {
+        p_listing_id: id,
+      });
+      expect(submitError).toBeNull();
+
+      const { data: pending } = await anonClient
+        .from("listings")
+        .select("id")
+        .eq("id", id);
+      expect(pending ?? []).toHaveLength(0);
+
+      const { data: searchPending } = await anonClient.rpc("search_listings", {
+        p_query: "Submitted then approved",
+        p_limit: 10,
+      });
+      expect(searchPending ?? []).toHaveLength(0);
+
+      const { error: sellerApprove } = await alice.client.rpc(
+        "approve_listing",
+        { p_listing_id: id },
+      );
+      expect(sellerApprove).not.toBeNull();
+
+      await admin.from("profiles").update({ role: "admin" }).eq("id", bob.id);
+
+      const { error: adminApprove } = await bob.client.rpc("approve_listing", {
+        p_listing_id: id,
+      });
+      expect(adminApprove).toBeNull();
+
+      const { data: live } = await anonClient
+        .from("listings")
+        .select("id, status")
+        .eq("id", id)
+        .maybeSingle();
+      expect(live?.status).toBe("live");
+
+      const { data: searchLive } = await anonClient.rpc("search_listings", {
+        p_query: "Submitted then approved",
+        p_limit: 10,
+      });
+      expect(
+        (searchLive ?? []).some((row: { id: string }) => row.id === id),
+      ).toBe(true);
+
+      await admin.from("profiles").update({ role: "user" }).eq("id", bob.id);
+    });
+  });
+
   describe("kyc_submissions", () => {
     it("never exposes a submission to an anonymous client", async () => {
       const { data } = await anonClient.from("kyc_submissions").select("*");

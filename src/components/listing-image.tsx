@@ -1,17 +1,11 @@
 /**
- * Placeholder imagery for seeded listings.
+ * Listing photograph, or a deterministic placeholder when none exists.
  *
- * Real uploads arrive in Phase 3 via Supabase Storage. Until then this renders
- * a deterministic inline SVG derived from the listing id, so the same listing
- * always looks the same across reloads and across machines.
- *
- * Deliberately NOT a remote image service. A grid that depends on an external
- * host breaks offline, breaks behind a restrictive network, and would show a
- * random landscape photo above a listing titled "Canon DSLR" — which reads
- * worse than an honest placeholder.
- *
- * Inline SVG rather than a data URI: no base64 bloat in the HTML, it scales
- * cleanly at any size, and it inherits the page's theme.
+ * Seeded catalogue rows have no Storage object — they keep the SVG so the
+ * grid does not depend on an external image host. Seller-uploaded photos
+ * arrive as a public Supabase Storage URL and render as a plain <img>.
+ * next/image is not used: the local stack and a hosted project have different
+ * hosts, and a missing remotePattern would 400 every photo.
  */
 
 /** FNV-1a. Small, fast, and stable across runtimes — which matters, because the
@@ -43,15 +37,24 @@ export function ListingImage({
   listingId,
   title,
   className = "",
+  src = null,
   priority = false,
 }: {
   listingId: string;
   title: string;
   className?: string;
-  /** Ignored for SVG; kept so the call sites do not change in Phase 3. */
+  src?: string | null;
+  /** Ignored for SVG; kept so the call sites do not change. */
   priority?: boolean;
 }) {
   void priority;
+
+  if (src) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt="" className={className} />
+    );
+  }
 
   const h = hash(listingId);
   const [from, to] = PALETTES[h % PALETTES.length];
