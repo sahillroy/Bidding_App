@@ -1,0 +1,53 @@
+name: Supabase keep-alive
+
+# Supabase free-tier projects are paused after 7 days of no activity and then
+# return HTTP 540 until someone manually restores them from the dashboard. A
+# paused project on demo day is the single most likely way this project fails
+# in front of an audience (implementationplan.md §3.3, §15).
+#
+# This workflow makes one trivial authenticated request every three days, which
+# is enough to count as activity. Three days, not seven, so that two consecutive
+# failed runs still leave a day of margin.
+on:
+  schedule:
+    - cron: "17 4 */3 * *" # 04:17 UTC, every third day
+  workflow_dispatch: # lets you trigger it by hand before a demo
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST endpoint
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::warning::SUPABASE_URL / SUPABASE_ANON_KEY repository secrets are not set yet."
+            echo "Add them under Settings → Secrets and variables → Actions once the"
+            echo "Supabase project exists (Phase 1). Skipping."
+            exit 0
+          fi
+
+          # HEAD against the REST root. No table is required to exist for this
+          # to count as activity, so the workflow works from Phase 1 onward
+          # without needing to know the schema.
+          status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" \
+            "$SUPABASE_URL/rest/v1/")
+
+          echo "HTTP $status"
+
+          # 540 is Supabase's "project is paused" response.
+          if [ "$status" = "540" ]; then
+            echo "::error::Supabase project is PAUSED. Restore it from the dashboard."
+            exit 1
+          fi
+
+          if [ "$status" -ge 500 ]; then
+            echo "::error::Supabase returned $status."
+            exit 1
+          fi
+
+          echo "Project is awake."
