@@ -76,7 +76,25 @@ Node 24 or newer (`.nvmrc` pins the exact version).
 | `npm run lint` | ESLint |
 | `npm test` | Vitest in watch mode |
 | `npm run test:run` | Vitest once, as CI runs it |
+| `npm run test:integration` | the Row Level Security suite (needs a database) |
 | `npm run check:compliance` | the legal-constraint tripwire described below |
+| `npm run db:start` | local Supabase stack — Postgres, Auth, Storage (needs Docker) |
+| `npm run db:reset` | re-apply every migration from scratch |
+| `npm run db:push` | apply migrations to the linked hosted project |
+
+### Running against a real database
+
+```bash
+npm run db:start          # prints the local URL and keys
+npm run db:reset          # applies supabase/migrations in order
+npm run test:integration  # 14 RLS tests
+```
+
+`supabase start` prints an anon key and a service role key; put them in
+`.env.local`. They are the same on every machine and are not secrets.
+
+Studio is at http://127.0.0.1:54323 and the local mail catcher at
+http://127.0.0.1:54324.
 
 ### The compliance check
 
@@ -147,7 +165,7 @@ Worth more than the code, in an interview:
 ## Build progress
 
 - [x] **Phase 0** — Foundations: scaffold, CI, compliance guard, docs
-- [ ] **Phase 1** — Data model and auth
+- [x] **Phase 1** — Data model and auth: 9 migrations, RLS on every table, email/password auth
 - [ ] **Phase 2** — Public browsing
 - [ ] **Phase 3** — Selling and moderation
 - [ ] **Phase 4** — The bidding engine

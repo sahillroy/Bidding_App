@@ -70,7 +70,40 @@ docs/                architecture, data model, auction rules, compliance
 
 ## Current state
 
-Phase: **0 complete, awaiting Phase 1**.
+Phase: **1 complete and verified, awaiting Phase 2**.
+
+Done in Phase 1:
+- All 9 migrations (`supabase/migrations/0001`–`0009`), applied and **verified
+  against a real Postgres 17.6** via the local Supabase stack
+- RLS enabled *and forced* on every table; `force` matters, or the table owner
+  bypasses every policy and the policies become untestable
+- Supabase Auth with email/password; signup trigger creates the profile row and
+  its generated handle, so it cannot be skipped
+- Three Supabase clients: anon (RLS applies) for server and browser, and a
+  service-role client that bypasses RLS — for QStash and cron targets only,
+  never to work around a failing query
+- Session-refresh middleware, `(app)` and `(admin)` route groups, login, signup,
+  logout, account page
+- `tests/integration/rls.test.ts` — 14 tests, **passing**. 20/20 overall
+
+Phase 1 acceptance criterion, demonstrated live:
+`anon → GET /rest/v1/profiles` returns `42501 permission denied`, while
+`public_profiles` returns handles only.
+
+Decisions taken in Phase 1 (each raised with a recommendation first):
+- `text` + `CHECK` rather than Postgres `ENUM` — enum values cannot be removed
+- `current_price` NULL until the first bid — fixes a real bug in plan §6.3
+- 6-hex handles, not the plan's 4 — 4 collides at ~300 users
+- Email/password first; Google OAuth deferred until a deployed origin exists
+
+Bugs found by actually running things, not by reading:
+- Migrations failed on first execution — `is_admin()` in 0001 read `profiles`
+  from 0002. `language sql` bodies are validated eagerly at CREATE, so it failed
+  immediately; a plpgsql body would have hidden it until first call
+- The RLS suite silently **skipped** without env vars, and "14 skipped" reads
+  like success. Vitest now loads `.env.local` itself
+- `SiteHeader` could 500 every page when Supabase pauses (free tier, HTTP 540),
+  taking down anonymous browsing. Now degrades to signed-out (D-5)
 
 Done in Phase 0:
 - Next.js 16 + TypeScript + Tailwind v4 + shadcn/ui scaffolded, `npm audit` clean
@@ -84,12 +117,20 @@ Done in Phase 0:
 Deviations from the plan, each recorded in `docs/SECURITY_NOTES.md`:
 - **Next 16, not 15** (D-2) — Next 15 bundles a `postcss` with a high-severity advisory
 - **`@types/node` 24, not 20** (D-4) — match the runtime actually in use
+- **Vitest 4, not 5** (D-6) — Vitest 5 needs a native rolldown binding that npm
+  drops from the lockfile on every targeted install. Do not "upgrade" it back
 
-Not done in Phase 0, deferred by decision: the Vercel deploy. Moved to the end of
-Phase 1 at the owner's request, against the plan's advice in §11. The deployment
-risk it was meant to retire is still outstanding.
+**Still outstanding: the Vercel deploy.** Deferred from Phase 0 to the end of
+Phase 1 at the owner's request, against the plan's advice in §11, and now
+overdue. No hosted Supabase project exists either — everything so far runs
+against the local stack. The keep-alive workflow stays inert until both exist
+and its repo secrets are set.
 
-Next: Phase 1 — data model and auth. Requires a Supabase project to exist first.
+Next: Phase 2 — public browsing, and the first substantial UI in the project.
+
+Local development:
+`npm run db:start` (needs Docker) · `npm run db:reset` · `npm run test:integration`
+Studio at http://127.0.0.1:54323, mail catcher at http://127.0.0.1:54324.
 
 Update this section at the end of every phase.
 
