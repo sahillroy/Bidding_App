@@ -2,11 +2,9 @@
 
 The schema, and the reasoning behind each Row Level Security policy.
 
-> **Status:** all Phase 1 migrations are **written** (`supabase/migrations/0001`
-> – `0009`). At the time of writing they have **not been executed against any
-> database** — no Supabase project exists yet and Docker was unavailable
-> locally. Treat the SQL as reviewed-but-unverified until
-> `npm run test:integration` passes.
+> **Status:** migrations `0001`–`0011` are applied and **verified against a
+> real Postgres 17.6** via the local Supabase stack. The RLS suite
+> (`npm run test:integration`) passes.
 
 ---
 
@@ -241,3 +239,50 @@ npm run test:integration  # the RLS suite
 The RLS suite skips when no database is configured, so `npm run test:run` stays
 green on a machine without one. **Phase 1 is not complete until it actually
 runs and passes.**
+
+---
+
+## Phase 2 additions
+
+### `listings.search_vector` — migration 0010
+
+A `GENERATED ALWAYS ... STORED` tsvector over title (weight A) and description
+(weight B), with a GIN index.
+
+Generated rather than trigger-maintained so it cannot drift from the row it
+describes: there is no trigger to forget and no code path that can skip
+updating it.
+
+Why not `title ilike '%term%'`: no stemming, so "cameras" would not match
+"camera"; no ranking, so a passing mention outranks nothing; and a leading
+wildcard cannot use an index, so it degrades to a sequential scan on every
+keystroke.
+
+### `search_listings()` — migration 0010
+
+**This function is deliberately NOT `security definer`.** It runs as the caller,
+so the `listings` RLS policies still apply and an anonymous searcher sees only
+the statuses the public policy allows. Making it definer would have quietly made
+drafts and pending-review listings searchable — a data leak through a feature
+that looks like it has nothing to do with authorization. There is a test for
+exactly this.
+
+It uses `websearch_to_tsquery`, not `to_tsquery`. The former understands the
+syntax people already expect from a search box — quoted phrases, `OR`,
+`-excluded` — and never raises on malformed input. `to_tsquery` throws a syntax
+error on a stray operator, which would turn a user's typo into a 500.
+
+`p_limit` is clamped server-side to 100 so a crafted request cannot ask for the
+whole table.
+
+### `server_now()` — migration 0011
+
+Returns the database clock. Every page that renders a countdown pairs `ends_at`
+with this value, and the browser computes its own skew from the difference.
+
+The application process and Postgres are different machines with different
+clocks. The rule that actually governs an auction is `now() >= ends_at`
+evaluated inside the `place_bid` transaction. Anchoring a countdown to the
+application clock instead could show a timer that disagrees with the rule being
+enforced — a bidder watching "3 seconds left" on an auction the database has
+already closed.

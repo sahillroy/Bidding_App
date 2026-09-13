@@ -166,7 +166,7 @@ Worth more than the code, in an interview:
 
 - [x] **Phase 0** — Foundations: scaffold, CI, compliance guard, docs
 - [x] **Phase 1** — Data model and auth: 9 migrations, RLS on every table, email/password auth
-- [ ] **Phase 2** — Public browsing
+- [x] **Phase 2** — Public browsing: listing grid, categories, full-text search, seed data
 - [ ] **Phase 3** — Selling and moderation
 - [ ] **Phase 4** — The bidding engine
 - [ ] **Phase 5** — Closure and settlement

@@ -70,7 +70,30 @@ docs/                architecture, data model, auction rules, compliance
 
 ## Current state
 
-Phase: **1 complete and verified, awaiting Phase 2**.
+Phase: **2 complete and verified, awaiting Phase 3**.
+
+Done in Phase 2:
+- Public catalogue at `/`, category pages, listing detail — all server-rendered
+  and fully usable logged out. 50/50 tests pass
+- Postgres full-text search (migration 0010): generated tsvector, GIN index, and
+  `search_listings()` which is deliberately NOT security definer, so RLS still
+  applies and unapproved listings stay unsearchable
+- `server_now()` (migration 0011) anchors every countdown to the database clock
+- `supabase/seed.sql` — 8 categories, 6 sellers, 1 admin, 41 live auctions.
+  `npm run db:reset` reproduces the whole demo dataset deterministically
+- Generated database types in `src/types/database.ts`, wired into every client.
+  **Regenerate after any migration**, or queries silently lose their types:
+  `npx supabase gen types typescript --local > src/types/database.ts`
+- `src/lib/money.ts` (paise, en-IN grouping), `src/lib/auction/increments.ts`
+  (the §6.2 bands, reused by Phase 4), `src/lib/time.ts` (skew-corrected countdown)
+- `tsconfig` target raised to ES2022 — bigint literals need ES2020 or later, and
+  the whole money design depends on them
+
+Demo admin login: admin@example.test / demo-password-not-secret
+
+Known gap, not a bug: search has no synonyms, so "camera" does not match a
+listing titled "DSLR". Real marketplaces maintain a synonym dictionary. Noted
+rather than fixed.
 
 Done in Phase 1:
 - All 9 migrations (`supabase/migrations/0001`–`0009`), applied and **verified
@@ -126,7 +149,12 @@ overdue. No hosted Supabase project exists either — everything so far runs
 against the local stack. The keep-alive workflow stays inert until both exist
 and its repo secrets are set.
 
-Next: Phase 2 — public browsing, and the first substantial UI in the project.
+Next: Phase 3 — selling and moderation: the listing wizard, image upload to
+Supabase Storage, and the admin approval queue.
+
+**Before Phase 3: raise Docker memory.** The storage container fails its health
+check at the current 3.7 GB allocation, and Phase 3 needs Storage for image
+uploads. Docker Desktop → Settings → Resources → 6 GB or more.
 
 Local development:
 `npm run db:start` (needs Docker) · `npm run db:reset` · `npm run test:integration`

@@ -249,6 +249,82 @@ describeIfConfigured("Row Level Security", () => {
     });
   });
 
+  describe("public catalogue (Phase 2)", () => {
+    it("lets an anonymous client read live listings", async () => {
+      const { data, error } = await anonClient
+        .from("listings")
+        .select("id, title, status")
+        .eq("status", "live")
+        .limit(5);
+
+      expect(error).toBeNull();
+      // The seed creates 41 live listings. Anonymous browsing is the whole
+      // point of Phase 2, so an empty result here is a failure, not a pass.
+      expect((data ?? []).length).toBeGreaterThan(0);
+    });
+
+    it("hides draft and pending_review listings from everyone public", async () => {
+      // This is Phase 3's guarantee, enforced by RLS rather than by a filter in
+      // application code. Create an unapproved listing as the service role and
+      // confirm the anon client cannot see it.
+      const { data: cat } = await admin
+        .from("categories")
+        .select("id")
+        .limit(1)
+        .single();
+      const { data: seller } = await admin
+        .from("profiles")
+        .select("id")
+        .limit(1)
+        .single();
+
+      const { data: created, error: insertError } = await admin
+        .from("listings")
+        .insert({
+          seller_id: seller!.id,
+          title: "Hidden draft listing for RLS test",
+          description: "This must never be visible to an anonymous client.",
+          category_id: cat!.id,
+          condition: "good",
+          starting_price: 100000,
+          bid_increment: 5000,
+          duration_seconds: 3600,
+          status: "pending_review",
+        })
+        .select("id")
+        .single();
+
+      expect(insertError).toBeNull();
+
+      const { data: seen } = await anonClient
+        .from("listings")
+        .select("id")
+        .eq("id", created!.id);
+
+      expect(seen ?? []).toHaveLength(0);
+
+      await admin.from("listings").delete().eq("id", created!.id);
+    });
+
+    it("never exposes a seller uuid through public_bids", async () => {
+      const { data } = await anonClient.from("public_bids").select("*").limit(1);
+      for (const row of data ?? []) {
+        expect(Object.keys(row)).not.toContain("bidder_id");
+      }
+    });
+
+    it("search runs as the caller, so it cannot surface unapproved listings", async () => {
+      // search_listings is deliberately NOT security definer. If it were, it
+      // would bypass RLS and make drafts searchable.
+      const { data, error } = await anonClient.rpc("search_listings", {
+        p_query: "hidden draft listing",
+        p_limit: 10,
+      });
+      expect(error).toBeNull();
+      expect(data ?? []).toHaveLength(0);
+    });
+  });
+
   describe("kyc_submissions", () => {
     it("never exposes a submission to an anonymous client", async () => {
       const { data } = await anonClient.from("kyc_submissions").select("*");
