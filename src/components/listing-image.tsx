@@ -49,15 +49,35 @@ export function ListingImage({
 }) {
   void priority;
 
+  const h = hash(listingId);
+  const [from, to] = PALETTES[h % PALETTES.length];
+
   if (src) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={src} alt="" className={className} />
+      <img
+        src={src}
+        alt=""
+        className={className}
+        /*
+          The gradient sits BEHIND the photograph, as the element's own
+          background, so a broken image shows it instead of a blank rectangle.
+
+          This is not hypothetical. A `listing_images` row can outlive the
+          Storage object it points at — a half-failed upload, an object deleted
+          out of the bucket, a database restored from a snapshot taken after
+          the files were cleared. Before this, any of those turned the card
+          into an empty hole. Now it degrades to the same placeholder a listing
+          with no photo gets.
+
+          Deliberately not an onError handler: that would make this a client
+          component, and 40 of them on a grid is a real cost for a case a
+          single CSS declaration already covers.
+        */
+        style={{ background: `linear-gradient(${h % 90}deg, ${from}, ${to})` }}
+      />
     );
   }
-
-  const h = hash(listingId);
-  const [from, to] = PALETTES[h % PALETTES.length];
   const gradientId = `g-${listingId.replace(/[^a-zA-Z0-9]/g, "")}`;
   const angle = h % 90;
 

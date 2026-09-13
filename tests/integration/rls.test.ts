@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
@@ -90,6 +90,47 @@ describeIfConfigured("Row Level Security", () => {
     alice = await makeUser("alice");
     bob = await makeUser("bob");
   }, 60_000);
+
+  /**
+   * Clean up the listings this suite creates.
+   *
+   * Without this, every run permanently added rows to the catalogue: the
+   * approved fixture went LIVE and stayed there, so a developer who ran the
+   * tests and then opened the site saw "Submitted then approved" sitting among
+   * the real seed data, with a broken image pointing at a Storage object the
+   * test never uploaded.
+   *
+   * Note what this does NOT do: it does not delete an approved listing. It
+   * cannot. Once a listing is submitted, auction_events holds its audit trail,
+   * that table is append-only with a trigger blocking DELETE, and it
+   * references listings ON DELETE RESTRICT. That is the design working as
+   * intended — the dispute record is meant to outlive the thing it describes.
+   *
+   * So the fixtures are retired rather than erased: drafts, which have no
+   * events yet, are deleted; anything further along is moved to 'cancelled',
+   * which is not one of the publicly visible statuses. The audit trail
+   * survives and the demo catalogue stays clean.
+   */
+  afterAll(async () => {
+    if (!admin) return;
+
+    const { data: fixtures } = await admin
+      .from("listings")
+      .select("id, status")
+      .eq("description", "A draft used by the Phase 3 RLS suite.");
+
+    for (const row of fixtures ?? []) {
+      if (row.status === "draft") {
+        await admin.from("listing_images").delete().eq("listing_id", row.id);
+        await admin.from("listings").delete().eq("id", row.id);
+      } else {
+        await admin
+          .from("listings")
+          .update({ status: "cancelled" })
+          .eq("id", row.id);
+      }
+    }
+  }, 30_000);
 
   describe("signup trigger", () => {
     it("creates a profile automatically, with a generated handle", async () => {
