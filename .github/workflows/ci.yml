@@ -1,15 +1,28 @@
 name: CI
 
 on:
+  # Every branch, not just main.
+  #
+  # This originally read `branches: [main]`, which meant a feature branch got
+  # NO automated verification until the moment it was merged. That was fine
+  # while one person worked on one branch; with two people it let an entire
+  # phase — around 3,900 lines — sit on a branch having never been typechecked,
+  # linted or tested by anything but the laptop it was written on.
+  #
+  # Work should be verified where it is written, not where it lands.
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
     branches: [main]
 
 # Cancel an in-progress run when a branch is pushed again. Saves minutes and
 # means the latest commit is always the one whose status you are reading.
+#
+# Keyed on the PR number when there is one, so that the push run and the
+# pull_request run for the same branch collapse into a single group instead of
+# racing each other.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
