@@ -1,6 +1,24 @@
 import { defineConfig } from "vitest/config";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { existsSync } from "node:fs";
+
+/*
+  Load .env.local into process.env before the suites are collected.
+
+  Without this, the RLS integration tests find no database configuration and
+  SKIP — and a skipped test looks almost exactly like a passing one in the
+  summary line. "14 skipped" is easy to read as success at a glance, which
+  would mean shipping a schema nobody verified.
+
+  process.loadEnvFile is native in Node 20.6+, so this needs no dependency.
+  Vitest does not load .env files into process.env on its own; Vite's own env
+  handling only exposes VITE_-prefixed values to import.meta.env.
+*/
+const envLocal = resolve(dirname(fileURLToPath(import.meta.url)), ".env.local");
+if (existsSync(envLocal)) {
+  process.loadEnvFile(envLocal);
+}
 
 export default defineConfig({
   test: {

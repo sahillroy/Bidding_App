@@ -10,20 +10,40 @@ import { Button } from "@/components/ui/button";
  * shared-screen situation. The handle is the identity this product uses.
  */
 export async function SiteHeader() {
-  const supabase = await createClient();
+  /*
+    Anonymous browsing must survive the database being unavailable.
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    The Supabase free tier pauses a project after seven days of inactivity and
+    then returns HTTP 540. Without the catch below, that would 500 the root
+    layout, which would take down every page on the site — including the public
+    catalogue that is supposed to be browsable without an account at all.
 
+    Failing closed here means "render as if signed out", which is the correct
+    degraded state: the worst case is a signed-in user briefly seeing a Sign in
+    button. It is NOT a security weakness — nothing is granted on this path,
+    and every protected route re-checks the session server-side and is backed
+    by RLS regardless.
+  */
+  let user: { id: string } | null = null;
   let handle: string | null = null;
-  if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("handle")
-      .eq("id", user.id)
-      .single();
-    handle = data?.handle ?? null;
+
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user: authUser },
+    } = await supabase.auth.getUser();
+    user = authUser;
+
+    if (user) {
+      const { data } = await supabase
+        .from("profiles")
+        .select("handle")
+        .eq("id", user.id)
+        .single();
+      handle = data?.handle ?? null;
+    }
+  } catch {
+    // Rendered signed-out. See above.
   }
 
   return (

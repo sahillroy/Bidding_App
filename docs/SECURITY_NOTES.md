@@ -79,6 +79,41 @@ Node 24 so CI and local development agree.
 
 ---
 
+### D-5 · The site header fails open to "signed out", deliberately
+
+**Phase 1.**
+
+`SiteHeader` runs in the root layout and calls Supabase on every request,
+including anonymous ones. An unhandled failure there would 500 the layout and
+therefore every page on the site — including the public catalogue, which is
+specified to be browsable without an account.
+
+The Supabase free tier pauses a project after seven days of inactivity and then
+returns HTTP 540, so this is a routine condition, not a hypothetical.
+
+The call is wrapped and failure renders the signed-out header. This is **not** a
+security weakness: the degraded state grants nothing. The worst outcome is a
+signed-in user briefly seeing a "Sign in" button. Every protected route
+re-checks the session server-side, and all of it is backed by RLS regardless.
+
+Failing *closed* would have been wrong here — it would mean an unrelated
+database outage takes down anonymous browsing entirely.
+
+### D-6 · Vitest pinned to 4.x, not 5.x
+
+**Phase 1.**
+
+Vitest 5 is rolldown-based and requires a native platform binding. npm has a
+long-standing bug where a targeted `npm install <pkg>` drops optional platform
+bindings from the lockfile, so on Windows the test runner broke after **every**
+dependency addition, recoverable only by deleting `node_modules` and
+`package-lock.json` and reinstalling.
+
+Vitest 4 is vite/esbuild based and needs no native binding. Symptom to
+recognise if someone upgrades: `Cannot find module '@rolldown/binding-...'`.
+
+---
+
 ## Known weaknesses
 
 ### W-1 · PII scrubbing is necessary but not sufficient

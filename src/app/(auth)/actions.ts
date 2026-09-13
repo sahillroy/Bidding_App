@@ -66,15 +66,14 @@ export async function signup(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
   });
 
   if (error) {
     // Supabase deliberately does not reveal whether an address is already
-    // registered, and neither do we. The success path below says "check your
-    // email", which is true either way.
+    // registered, and neither do we.
     return { error: "Could not create that account. Please try again." };
   }
 
@@ -83,6 +82,16 @@ export async function signup(
   // be skipped; application code can.
 
   revalidatePath("/", "layout");
+
+  // Whether a session comes back depends on the project's email-confirmation
+  // setting, which differs between the local stack (confirmations off, so the
+  // user is signed in immediately) and a hosted project (confirmations on).
+  // Branch on what actually happened rather than assuming, or local signups
+  // get sent to a "check your email" page for an email that was never sent.
+  if (data.session) {
+    redirect("/account");
+  }
+
   redirect("/signup/check-email");
 }
 
