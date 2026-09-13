@@ -1,0 +1,17 @@
+# Normalise line endings. Development happens on Windows; CI runs on Linux.
+# Without this, every file round-trips as CRLF in the repository and shell
+# scripts in .github/workflows fail on the runner with "bad interpreter".
+* text=auto eol=lf
+
+# Binary files git must never try to normalise.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+
+# Keep generated lockfile diffs collapsed in pull requests.
+package-lock.json linguist-generated=true -diff
