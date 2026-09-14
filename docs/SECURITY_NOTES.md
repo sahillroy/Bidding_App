@@ -190,3 +190,43 @@ depend on `canvas.toBlob`.
 CI runs `npm audit --audit-level=high` as a separate job. High and critical
 findings fail the build. Moderate and low findings are triaged here rather than
 blocking work, so that the failing signal keeps meaning something.
+
+### D-8 · The plan's concurrency gate did not detect a missing row lock
+
+**Phase 4.**
+
+Plan §6.4 specifies the Phase 4 gate as a single burst of 50 concurrent
+identical bids via `Promise.all`, asserting exactly one is accepted.
+
+That test was written, run, and then run again with `for update` deleted from
+`place_bid`. **It passed both times.**
+
+The reason is timing, not logic. The transaction inside `place_bid` takes
+roughly a millisecond. `Promise.all` guarantees the requests are *issued*
+together; it guarantees nothing about them interleaving inside Postgres, and
+fifty HTTP round-trips do not reliably overlap inside a window that small. On a
+cold connection pool they simply queue.
+
+A gate that passes with the protection removed is not a gate — it is a test
+that would have let a race condition through while reporting green, which is
+worse than having no test, because it manufactures confidence.
+
+**Two changes make it real:**
+
+1. **Five rounds, not one.** By round two the HTTP connections are warm and
+   latency has dropped far enough for genuine overlap. Measured with the lock
+   removed: round two accepted **eight** bids instead of one, the listing
+   finished with nine bid rows instead of five, and `highest_bidder_id` pointed
+   at someone who was not the top bidder.
+
+2. **A ladder invariant, not a row count.** Counting rows would have missed it
+   even so. `set bid_count = bid_count + 1` re-reads under the exclusive lock
+   that the `UPDATE` itself takes, so the count stays correct while two bids sit
+   at the same price. What a lost update actually breaks is the ordering rule —
+   every bid after the first must clear its predecessor by the stored increment.
+   That is the property an auction rests on, and it is checkable after any
+   sequence of bids.
+
+**The lesson generalises past this project:** a concurrency test is only worth
+the confidence it creates if you have watched it fail. Before trusting one,
+remove the protection it is supposed to be testing and confirm it goes red.

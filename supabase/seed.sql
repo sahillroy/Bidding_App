@@ -325,3 +325,64 @@ begin
     );
   end if;
 end $$;
+
+
+-- ===========================================================================
+-- Phase 4 · verified bidders
+--
+-- place_bid requires kyc_status = 'verified'. That rule is enforced from the
+-- moment the engine exists rather than being switched on in Phase 6, because a
+-- validation rule that ships disabled has a habit of staying disabled.
+--
+-- So the demo needs accounts that can actually bid. These four are marked
+-- verified directly, which is the ONE place in the project where kyc_status is
+-- set outside an admin decision — the same bootstrap exemption the admin
+-- account gets above, and for the same reason.
+--
+-- NO DOCUMENT NUMBER IS INVOLVED, here or anywhere. There is no
+-- kyc_submissions row: `verified` is a status on the profile, and the thing it
+-- attests to was never stored. See docs/COMPLIANCE.md §1.
+--
+-- They are deliberately NOT sellers. place_bid rejects a seller bidding on
+-- their own listing, so a bidder who also owns listings would be unable to bid
+-- on those and would make the demo confusing.
+--
+-- Sign in as any of these with demo-password-not-secret
+-- ===========================================================================
+do $$
+declare
+  v_emails text[] := array[
+    'bidder-ishan@example.test',
+    'bidder-priya@example.test',
+    'bidder-arjun@example.test',
+    'bidder-nisha@example.test'
+  ];
+  v_email text;
+  v_id    uuid;
+  v_n     integer := 0;
+begin
+  foreach v_email in array v_emails loop
+    v_n := v_n + 1;
+    v_id := ('33333333-3333-4333-8333-' || lpad(v_n::text, 12, '0'))::uuid;
+
+    if not exists (select 1 from auth.users where id = v_id) then
+      insert into auth.users (
+        instance_id, id, aud, role, email,
+        encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+      ) values (
+        '00000000-0000-0000-0000-000000000000',
+        v_id, 'authenticated', 'authenticated', v_email,
+        crypt('demo-password-not-secret', gen_salt('bf')), now(),
+        '{"provider":"email","providers":["email"]}'::jsonb,
+        '{}'::jsonb,
+        now() - (v_n || ' days')::interval, now()
+      );
+
+      -- The trigger created the profile; mark it verified so it can bid.
+      update public.profiles
+         set kyc_status = 'verified'
+       where id = v_id;
+    end if;
+  end loop;
+end $$;
