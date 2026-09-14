@@ -210,14 +210,29 @@
    content is simply THERE: content must never depend on an animation to be
    visible.
    --------------------------------------------------------------------------- */
+/*
+   Uses the INDEPENDENT translate and scale properties, not transform.
+
+   A finished animation with fill-mode: both keeps applying its final keyframe,
+   and animation declarations outrank normal author declarations. Animating
+   `transform` here therefore silently killed every transform-based hover on
+   the same element — the card lift and the 3D tilt both computed to the
+   identity matrix once the reveal had run, while the border, glow, brackets
+   and reveal kept working, so it looked fine and was not.
+
+   translate and scale are separate properties that compose with transform, so
+   the reveal can own them and hover keeps transform to itself.
+*/
 @keyframes bk-rise {
   from {
     opacity: 0;
-    transform: translateY(26px) scale(0.985);
+    translate: 0 26px;
+    scale: 0.985;
   }
   to {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    translate: 0 0;
+    scale: 1;
   }
 }
 

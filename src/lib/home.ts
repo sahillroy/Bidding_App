@@ -92,10 +92,15 @@ export async function getEndingSoon(
 ): Promise<HomeListing[]> {
   const supabase = await createClient();
 
+  // Nothing closes an auction until Phase 5, so `status = live` on its own
+  // still matches rows whose ends_at has passed — and they sort FIRST in a
+  // "closing soonest" rail. getFeaturedListing already excluded them; this did
+  // not, so the two disagreed about what "live" meant.
   let q = supabase
     .from("listings")
     .select(LISTING_COLUMNS)
     .eq("status", "live")
+    .gt("ends_at", new Date().toISOString())
     .order("ends_at", { ascending: true })
     .limit(limit + 1);
 
@@ -175,10 +180,13 @@ export async function getHomeStats(): Promise<{
       .from("listings")
       .select("id", { count: "exact", head: true })
       .eq("status", "live"),
+    // Same lower bound: without it the hero's urgent red stat counts auctions
+    // that ended days ago.
     supabase
       .from("listings")
       .select("id", { count: "exact", head: true })
       .eq("status", "live")
+      .gt("ends_at", new Date().toISOString())
       .lt("ends_at", inAnHour),
     supabase.from("categories").select("id", { count: "exact", head: true }),
   ]);

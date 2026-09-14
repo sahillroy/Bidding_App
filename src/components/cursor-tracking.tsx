@@ -99,10 +99,21 @@ export function CursorTracking() {
       rect = null;
     };
 
-    // A scroll invalidates the cached rect. Cheaper to drop the effect for the
-    // rest of that gesture than to re-measure on every scroll frame.
+    // A scroll invalidates the cached rect.
+    //
+    // This comment used to say it was cheaper to drop the effect than to
+    // re-measure, and then the code re-measured — synchronously, on every
+    // scroll event, which is the forced layout the rest of this file goes out
+    // of its way to avoid.
+    //
+    // Dropping it is what the comment always claimed. As far as the tilt is
+    // concerned the pointer has left the card, and the next pointermove
+    // re-arms it through pointerover anyway.
     const onScroll = () => {
-      if (active) rect = active.getBoundingClientRect();
+      if (!active) return;
+      clear(active);
+      active = null;
+      rect = null;
     };
 
     document.addEventListener("pointerover", onOver, { passive: true });

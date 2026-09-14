@@ -37,16 +37,26 @@ export async function placeBid(
     return { error: "That listing id is not valid." };
   }
 
+  /*
+    parseRupeesToPaise already rejects anything over the ceiling, so a separate
+    `amount > MAX_AMOUNT_PAISE` branch after it was unreachable — and someone
+    who typed a huge number was told their FORMAT was wrong, which is both
+    untrue and unhelpful. The two cases are separated here instead.
+  */
   const amount = parseRupeesToPaise(raw);
   if (amount === null) {
+    const cleaned = raw.trim().replace(/^₹/, "").replace(/,/g, "");
+
+    if (/^\d+(\.\d{1,2})?$/.test(cleaned)) {
+      // Well-formed, just too large.
+      return {
+        error: `The most this demo accepts is ${formatPaise(MAX_AMOUNT_PAISE)}.`,
+      };
+    }
+
     return {
       error:
         "Enter an amount in rupees, for example 25,500. Paise are allowed to two decimal places.",
-    };
-  }
-  if (amount > MAX_AMOUNT_PAISE) {
-    return {
-      error: `The maximum this demo accepts is ${formatPaise(MAX_AMOUNT_PAISE)}.`,
     };
   }
 

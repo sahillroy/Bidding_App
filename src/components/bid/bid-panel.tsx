@@ -265,13 +265,21 @@ function BlockedState({
   if (viewer.state === "unverified") {
     return (
       <>
-        <Link href="/verify" className={cta}>
-          Complete identity check
-          <ArrowRight className="size-4" />
-        </Link>
-        <p className="mt-3 text-center text-[11.5px] leading-relaxed text-[var(--bk-subtle)]">
-          A format check only. <strong>No document number is stored</strong> —
-          not encrypted, not hashed, not temporarily.
+        {/*
+          /verify is Phase 6. Linking to it now would 404, and this is the
+          DEFAULT state for every account except the four the seed marks
+          verified — so it would be the most-hit dead link on the site.
+          Says what is required and why instead.
+        */}
+        <p className="rounded-lg border border-border bg-[#0E1116] px-4 py-3.5 text-center text-[13px] leading-relaxed text-muted-foreground">
+          Bidding needs a completed identity check.
+          <br />
+          <span className="text-[var(--bk-subtle)]">
+            That step arrives in a later build phase. It is a format check
+            only — <strong className="text-muted-foreground">no document
+            number is ever stored</strong>, not encrypted, not hashed, not
+            temporarily.
+          </span>
         </p>
       </>
     );

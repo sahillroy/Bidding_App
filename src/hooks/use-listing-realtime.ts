@@ -36,10 +36,33 @@ export function useListingRealtime(
 ): LivePrice {
   const [price, setPrice] = useState(initial.currentPricePaise);
   const [count, setCount] = useState(initial.bidCount);
+
+  /*
+    Follow the server values when they change.
+
+    useState only reads its initialiser on the first render, so without this
+    the hook ignored every later prop. With the socket offline that was a real
+    failure: placing a bid revalidates the page, the server sends the new
+    price, and this kept showing the old one — so the amount field pre-filled a
+    minimum that was already too low and the next bid was rejected.
+
+    Compared during render rather than in an effect, which is React's
+    documented way to reset state from a changed input.
+  */
+  const [seenInitial, setSeenInitial] = useState(initial);
+  if (
+    initial.currentPricePaise !== seenInitial.currentPricePaise ||
+    initial.bidCount !== seenInitial.bidCount
+  ) {
+    setSeenInitial(initial);
+    setPrice(initial.currentPricePaise);
+    setCount(initial.bidCount);
+  }
   const [justChanged, setJustChanged] = useState(false);
   const [connected, setConnected] = useState(false);
 
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestPrice = useRef(initial.currentPricePaise);
 
   useEffect(() => {
     const supabase = createClient();
@@ -60,17 +83,20 @@ export function useListingRealtime(
             bid_count: number;
           };
 
-          setPrice((previous) => {
-            // Only flash when the price actually moved. The listing row is
-            // also updated by moderation and settlement, and a flash on an
-            // unrelated change would cry wolf.
-            if (row.current_price !== previous) {
-              setJustChanged(true);
-              if (flashTimer.current) clearTimeout(flashTimer.current);
-              flashTimer.current = setTimeout(() => setJustChanged(false), 1200);
-            }
-            return row.current_price;
-          });
+          // Only flash when the price actually moved. The listing row is also
+          // updated by moderation and settlement, and flashing on an unrelated
+          // change would cry wolf.
+          //
+          // Compared against a ref rather than inside a setPrice updater: a
+          // state updater must be pure, and StrictMode double-invokes it, so
+          // scheduling a timer in there fires twice.
+          if (row.current_price !== latestPrice.current) {
+            latestPrice.current = row.current_price;
+            setJustChanged(true);
+            if (flashTimer.current) clearTimeout(flashTimer.current);
+            flashTimer.current = setTimeout(() => setJustChanged(false), 1200);
+          }
+          setPrice(row.current_price);
           setCount(row.bid_count);
         },
       )

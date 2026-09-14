@@ -41,11 +41,24 @@ export function ImageStep({
     FormData
   >(deleteListingImage, {});
 
+  /*
+    Depends on the state OBJECTS, not on `.listingId`.
+
+    The id is the same string on every success — it is the listing being
+    edited — so a dependency array of [uploadState.listingId,
+    deleteState.listingId] changed exactly once, on the first upload, and never
+    again. Every subsequent upload or delete left the grid stale until the page
+    was reloaded by hand.
+
+    useActionState returns a fresh object per submission, so comparing the
+    object is what actually tracks "something happened". The guard inside still
+    keeps the initial empty state from triggering a refresh.
+  */
   useEffect(() => {
     if (uploadState.listingId || deleteState.listingId) {
       router.refresh();
     }
-  }, [uploadState.listingId, deleteState.listingId, router]);
+  }, [uploadState, deleteState, router]);
 
   async function onPick(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

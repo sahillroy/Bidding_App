@@ -72,7 +72,17 @@ export function PhotoCycler({
       onPointerEnter={start}
       onPointerLeave={stop}
     >
-      {images.map((src, i) => (
+      {/*
+        Only the cover is in the DOM until a pointer actually arrives.
+
+        These started out all mounted with loading="lazy" on the extras, which
+        does not do what it looks like: lazy defers to the VIEWPORT, not to
+        hover. So the rail downloaded every variant of every card the moment it
+        scrolled into view — several images per tile, including on touch
+        devices where cycling can never start at all. Mounting on demand is the
+        only thing that genuinely defers them.
+      */}
+      {(armed ? images : images.slice(0, 1)).map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={src}

@@ -11,9 +11,17 @@ export const metadata: Metadata = { title: "Your bids" };
 /**
  * Every auction this person has bid on, and where they stand in each.
  *
- * `bids` is readable only by its own bidder (and the seller of that listing,
- * and admins), so this query returns nothing for anyone else without needing a
- * filter — RLS is doing the work, as everywhere else.
+ * THE `bidder_id` FILTER BELOW IS NOT REDUNDANT, and an earlier version of
+ * this file omitted it on the reasoning that RLS already scopes the table.
+ * RLS does scope it — to three audiences. `bids` is readable by its own
+ * bidder, by the SELLER of the listing it is on, and by ADMINS. So without the
+ * filter a seller opening this page saw strangers' bids on their own listings
+ * rendered under the heading "Your bid", and an admin saw the entire site's
+ * bidding history presented as their own.
+ *
+ * RLS decides what you are *allowed* to read. It does not decide what this
+ * page is *about*. Those are different questions and only one of them is the
+ * database's job.
  *
  * "Winning" is computed by comparing the viewer's own id to the listing's
  * highest_bidder_id on the server. That uuid never reaches the browser: the
@@ -26,10 +34,13 @@ export default async function MyBidsPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) return null;
+
   const [{ data: myBids }, serverNow] = await Promise.all([
     supabase
       .from("bids")
       .select("id, amount, created_at, listing_id")
+      .eq("bidder_id", user.id)
       .order("created_at", { ascending: false })
       .limit(100),
     getServerNow(),
@@ -59,7 +70,7 @@ export default async function MyBidsPage() {
     .map((listing) => ({
       listing,
       mine: best.get(listing.id)!,
-      winning: listing.highest_bidder_id === user?.id,
+      winning: listing.highest_bidder_id === user.id,
     }))
     .sort((a, b) => (a.listing.ends_at ?? "").localeCompare(b.listing.ends_at ?? ""));
 
