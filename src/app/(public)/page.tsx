@@ -6,20 +6,35 @@ import {
   getCategories,
   getServerNow,
 } from "@/lib/listings";
+import {
+  getFeaturedListing,
+  getEndingSoon,
+  getRecentBids,
+  getHomeStats,
+} from "@/lib/home";
 import { ListingCard } from "@/components/listing-card";
 import { CategoryNav } from "@/components/category-nav";
 import { SearchBar } from "@/components/search-bar";
 import { ScrollProgress } from "@/components/scroll-progress";
+import { HomeHero } from "@/components/home/hero";
+import { EndingSoonRail } from "@/components/home/ending-soon-rail";
+import { BidTicker } from "@/components/home/bid-ticker";
 
 /**
- * The public catalogue.
+ * The homepage, in three acts.
  *
- * Fully usable logged out — this is the Phase 2 acceptance criterion. A visitor
- * with no account and no cookies sees every live auction, can filter, search,
- * and open any listing. They are asked to sign in only when they try to act.
+ *   1. The headline lot, chosen by contest rather than by an editor.
+ *   2. What is about to close, plus a live ticker of real bids.
+ *   3. The catalogue — Phase 2's grid, unchanged.
  *
- * Server-rendered on request rather than statically generated: prices and
- * countdowns change continuously, and a cached grid would show stale bids.
+ * The whole page is still server-rendered and still fully usable logged out,
+ * which is the Phase 2 acceptance criterion and does not get to regress just
+ * because the page got prettier.
+ *
+ * SEARCHING OR PAGING COLLAPSES THIS BACK TO THE CATALOGUE. Someone who has
+ * typed a query is looking for a specific thing; making them scroll past a
+ * hero to reach their results would be hostile. The front door is for arrival,
+ * not for every visit.
  */
 export const dynamic = "force-dynamic";
 
@@ -34,6 +49,9 @@ export default async function HomePage({
   const query = params.q?.trim() || undefined;
   const page = Math.max(1, Number(params.page) || 1);
 
+  // A search or a second page is a catalogue view, not an arrival.
+  const showFront = !query && page === 1;
+
   const [categories, serverNow, listings, total] = await Promise.all([
     getCategories(),
     getServerNow(),
@@ -45,14 +63,36 @@ export default async function HomePage({
     countLiveListings(),
   ]);
 
+  const [featured, stats, recentBids] = showFront
+    ? await Promise.all([getFeaturedListing(), getHomeStats(), getRecentBids()])
+    : [null, null, []];
+
+  const endingSoon = featured
+    ? await getEndingSoon(10, featured.id)
+    : [];
+
   return (
     <>
       <ScrollProgress />
 
-      <main className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-10">
-        <div className="flex flex-col gap-4 pt-7 sm:flex-row sm:items-center sm:justify-between">
+      {showFront && featured && stats && (
+        <>
+          <HomeHero listing={featured} serverNow={serverNow} stats={stats} />
+          <BidTicker bids={recentBids} />
+          <EndingSoonRail listings={endingSoon} serverNow={serverNow} />
+        </>
+      )}
+
+      <main
+        id="catalogue"
+        className="mx-auto max-w-[1400px] px-5 pb-20 sm:px-10"
+        // The hero is sticky-header height plus a little, so an anchor jump
+        // does not tuck the heading under the header.
+        style={{ scrollMarginTop: "72px" }}
+      >
+        <div className="flex flex-col gap-4 pt-10 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="font-[family-name:var(--font-display)] text-[34px] leading-[1.05] tracking-[-0.015em] sm:text-[40px]">
+            <h2 className="font-[family-name:var(--font-display)] text-[30px] leading-[1.05] tracking-[-0.015em] sm:text-[36px]">
               {query ? (
                 <>
                   Results for{" "}
@@ -61,9 +101,9 @@ export default async function HomePage({
                   </span>
                 </>
               ) : (
-                "Live auctions"
+                "Every live auction"
               )}
-            </h1>
+            </h2>
             <p className="mt-2 text-[13.5px] text-muted-foreground">
               {query
                 ? `${listings.length} ${listings.length === 1 ? "match" : "matches"}`
@@ -92,8 +132,6 @@ export default async function HomePage({
                   key={listing.id}
                   listing={listing}
                   serverNow={serverNow}
-                  // The first row is above the fold on most screens; letting it
-                  // animate in means a visitor watches their content arrive.
                   priority={i < 4}
                 />
               ))}

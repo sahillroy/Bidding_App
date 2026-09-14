@@ -17,7 +17,9 @@
     "db:stop": "supabase stop",
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push",
+    "seed:photos": "node scripts/seed-demo-photos.mjs",
+    "shots": "node scripts/shots.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
