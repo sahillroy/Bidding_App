@@ -175,4 +175,4 @@ Worth more than the code, in an interview:
 
 ---
 
-Built by [Sahil Roy](https://github.com/sahillroy).
+Built by [Sahil Roy](https://github.com/sahillroy),Kratwish Sagdeo & Aryan Iyer.
