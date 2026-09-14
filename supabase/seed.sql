@@ -386,3 +386,46 @@ begin
     end if;
   end loop;
 end $$;
+
+
+-- ===========================================================================
+-- Make the seeded accounts actually able to sign in.
+--
+-- THIS IS NOT COSMETIC. Without it, every account created by this file —
+-- all six sellers, the admin, and the four bidders — fails login with
+--
+--     500  {"error_code":"unexpected_failure",
+--           "msg":"Database error querying schema"}
+--
+-- which reads like a server fault and is easy to mistake for a wrong password.
+--
+-- The cause is that GoTrue scans these token columns into non-nullable Go
+-- strings. A row inserted straight into auth.users leaves them NULL; a user
+-- created through the admin API gets empty strings. NULL makes the scan fail
+-- before any password is ever compared.
+--
+-- It went unnoticed because nothing had ever signed in as a seeded account:
+-- the RLS and concurrency suites create their users through the admin API,
+-- which sets these correctly. The first time anyone tried the demo click-path
+-- — sign in as admin, approve a listing — it would have failed.
+--
+-- Written as one normalising UPDATE rather than repeated in each INSERT above,
+-- so a future account added to this file cannot forget it.
+-- ===========================================================================
+update auth.users
+   set confirmation_token          = coalesce(confirmation_token, ''),
+       recovery_token              = coalesce(recovery_token, ''),
+       email_change                = coalesce(email_change, ''),
+       email_change_token_new      = coalesce(email_change_token_new, ''),
+       email_change_token_current  = coalesce(email_change_token_current, ''),
+       phone_change                = coalesce(phone_change, ''),
+       phone_change_token          = coalesce(phone_change_token, ''),
+       reauthentication_token      = coalesce(reauthentication_token, '')
+ where confirmation_token is null
+    or recovery_token is null
+    or email_change is null
+    or email_change_token_new is null
+    or email_change_token_current is null
+    or phone_change is null
+    or phone_change_token is null
+    or reauthentication_token is null;

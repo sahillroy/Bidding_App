@@ -1,20 +1,18 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight } from "lucide-react";
 import {
   getListing,
   getBidHistory,
   getServerNow,
-  displayPricePaise,
-  hasBids,
   CONDITION_LABELS,
 } from "@/lib/listings";
 import { formatPaise } from "@/lib/money";
-import { minimumNextBid } from "@/lib/auction/increments";
 import { ListingImage } from "@/components/listing-image";
 import { Countdown } from "@/components/countdown";
 import { formatAbsolute } from "@/lib/time";
+import { BidPanel } from "@/components/bid/bid-panel";
+import { getBidViewerState } from "@/lib/auction/viewer";
 
 export const dynamic = "force-dynamic";
 
@@ -50,15 +48,10 @@ export default async function ListingPage({
   // this 404 is the database's answer rather than ours.
   if (!listing) notFound();
 
-  const bids = await getBidHistory(id);
-
-  const price = displayPricePaise(listing);
-  const bidded = hasBids(listing);
-  const nextBid = minimumNextBid(
-    BigInt(listing.starting_price),
-    listing.current_price === null ? null : BigInt(listing.current_price),
-    BigInt(listing.bid_increment),
-  );
+  const [bids, viewer] = await Promise.all([
+    getBidHistory(id),
+    getBidViewerState(id, listing.seller_id),
+  ]);
 
   return (
     <main className="mx-auto max-w-[1200px] px-5 pb-24 sm:px-10">
@@ -158,85 +151,41 @@ export default async function ListingPage({
             {listing.title}
           </h1>
 
-          <div className="mt-6 overflow-hidden rounded-xl border border-border bg-card">
-            <div className="p-[22px_22px_20px]">
-              <div className="text-[10px] font-semibold tracking-[0.12em] text-[var(--bk-subtle)] uppercase">
-                {bidded ? "Current bid" : "Starting bid"}
-              </div>
-              <div className="mt-2 flex flex-wrap items-baseline gap-3">
-                <span className="tnum font-mono text-[40px] leading-none font-medium tracking-[-0.03em]">
-                  {formatPaise(price)}
-                </span>
-                {/* Green reads as "rising" — right for a climbing bid count,
-                    wrong for an auction nobody has entered yet. */}
-                <span
-                  className={
-                    bidded
-                      ? "tnum font-mono text-[13px] text-[#3FBF8F]"
-                      : "tnum font-mono text-[13px] text-[var(--bk-subtle)]"
-                  }
-                >
-                  {bidded
-                    ? `▲ ${listing.bid_count} ${listing.bid_count === 1 ? "bid" : "bids"}`
-                    : "no bids yet"}
-                </span>
-              </div>
-              <p className="mt-2.5 text-[12.5px] text-muted-foreground">
-                Next bid{" "}
-                <span className="tnum font-mono text-foreground">
-                  {formatPaise(nextBid)}
-                </span>{" "}
-                or more
-                <span className="text-[var(--bk-subtle)]">
-                  {" "}
-                  · {formatPaise(BigInt(listing.bid_increment))} increment
-                </span>
-              </p>
-            </div>
-
-            {/*
-              ends_at is nullable because a draft has no end time. A CHECK
-              constraint guarantees a live listing has one; the type cannot know
-              that, so this branches rather than asserting.
-            */}
-            {listing.ends_at && (
-              <div className="flex items-center justify-between border-y border-[var(--bk-line)] bg-[#0C0F14] px-[22px] py-4">
-                <div>
-                  <div className="text-[10px] font-semibold tracking-[0.12em] text-[var(--bk-subtle)] uppercase">
-                    Ends in
-                  </div>
-                  <Countdown
-                    serverNow={serverNow}
-                    endsAt={listing.ends_at}
-                    className="mt-1.5 block font-mono text-[23px] font-medium tracking-[-0.01em]"
-                  />
+          {/*
+            The countdown is its own block above the panel. It is server-
+            anchored: `serverNow` comes from the DATABASE clock, and the browser
+            only corrects for its own skew and animates. Whether a bid arrived
+            in time is decided inside place_bid, never here.
+          */}
+          {listing.ends_at && (
+            <div className="mt-6 flex items-center justify-between rounded-xl border border-border bg-[#0C0F14] px-[22px] py-4">
+              <div>
+                <div className="text-[10px] font-semibold tracking-[0.12em] text-[var(--bk-subtle)] uppercase">
+                  Ends in
                 </div>
-                <div className="text-right text-[11.5px] leading-[1.55] text-[var(--bk-subtle)]">
-                  {formatAbsolute(listing.ends_at)}
-                  <br />
-                  IST
-                </div>
+                <Countdown
+                  serverNow={serverNow}
+                  endsAt={listing.ends_at}
+                  className="mt-1.5 block font-mono text-[23px] font-medium tracking-[-0.01em]"
+                />
               </div>
-            )}
-
-            <div className="p-[20px_22px_22px]">
-              {/*
-                Phase 4 replaces this with the live bid panel. Until then it
-                links to sign-in, which is the honest behaviour: bidding
-                requires an account and a completed identity check.
-              */}
-              <Link
-                href={`/login?next=/listings/${listing.id}`}
-                className="group flex w-full items-center justify-center gap-2.5 rounded-[9px] bg-[var(--bk-accent)] px-5 py-[15px] text-[14.5px] font-bold tracking-[-0.005em] text-[#04070D] shadow-[0_8px_26px_-10px_rgba(62,123,250,0.75)] outline-none transition-[background-color,transform,box-shadow] duration-200 ease-[var(--bk-ease)] hover:-translate-y-0.5 hover:bg-[var(--bk-accent-bright)] hover:shadow-[0_14px_34px_-10px_rgba(96,152,255,0.85)] focus-visible:ring-2 focus-visible:ring-[var(--bk-accent-bright)] focus-visible:ring-offset-2 focus-visible:ring-offset-background active:translate-y-0 active:bg-[var(--bk-accent-deep)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                Sign in to bid
-                <ArrowRight className="size-4 transition-transform duration-300 ease-[var(--bk-ease)] group-hover:translate-x-1 motion-reduce:transition-none" />
-              </Link>
-              <p className="mt-3 text-center text-[11.5px] leading-[1.6] text-[var(--bk-subtle)]">
-                Bidding needs an account and a completed identity check.
-                Browsing needs neither.
-              </p>
+              <div className="text-right text-[11.5px] leading-[1.55] text-[var(--bk-subtle)]">
+                {formatAbsolute(listing.ends_at)}
+                <br />
+                IST
+              </div>
             </div>
+          )}
+
+          <div className="mt-4">
+            <BidPanel
+              listingId={listing.id}
+              startingPricePaise={listing.starting_price}
+              currentPricePaise={listing.current_price}
+              bidIncrementPaise={listing.bid_increment}
+              bidCount={listing.bid_count}
+              viewer={viewer}
+            />
           </div>
 
           {listing.reserve_price !== null && (

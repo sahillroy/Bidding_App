@@ -953,9 +953,31 @@ export type Database = {
       }
     }
     Functions: {
+      approve_listing: { Args: { p_listing_id: string }; Returns: string }
       generate_handle: { Args: never; Returns: string }
       is_active_user: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
+      place_bid: {
+        Args: { p_amount: number; p_listing_id: string }
+        Returns: {
+          amount: number
+          bidder_id: string
+          created_at: string
+          id: string
+          listing_id: string
+          max_amount: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bids"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reject_listing: {
+        Args: { p_listing_id: string; p_note: string }
+        Returns: string
+      }
       search_listings: {
         Args: {
           p_category_id?: string
@@ -998,11 +1020,6 @@ export type Database = {
       }
       server_now: { Args: never; Returns: string }
       submit_listing: { Args: { p_listing_id: string }; Returns: string }
-      approve_listing: { Args: { p_listing_id: string }; Returns: string }
-      reject_listing: {
-        Args: { p_listing_id: string; p_note: string }
-        Returns: string
-      }
     }
     Enums: {
       [_ in never]: never
